@@ -1403,6 +1403,27 @@ async function handleSubmit() {
   if (!pcName || !office || !tier || !omSig) {
     showToast('Fill in PC Name, Office, Tier, and OM Signature before submitting.', 'error'); return;
   }
+  // Require current hourly rate
+  const currentRateVal = parseFloat(document.getElementById('currentRate').value);
+  if (!currentRateVal || currentRateVal <= 0) {
+    showToast('Enter the current hourly rate before submitting.', 'error'); return;
+  }
+  // Require tier competency checklist filled for current tier and all tiers below
+  {
+    const tierKeys = ['T1','T2','T3','T4','T5','T6','T7'];
+    const currentIdx = tierKeys.indexOf(tier);
+    const tiersToCheck = tierKeys.slice(0, currentIdx + 1);
+    let allMarked = true;
+    outer: for (const tk of tiersToCheck) {
+      const indices = getSkillIndices(tk);
+      for (const idx of indices) {
+        if (!skillState[`${tk}_${idx}`]) { allMarked = false; break outer; }
+      }
+    }
+    if (!allMarked) {
+      showToast('Complete the Tier Competency Checklist (mark ✓ or ✗ for every skill in the current tier and below) before submitting.', 'error'); return;
+    }
+  }
   const cfg = getConfig();
   if (!cfg.workerUrl) {
     showToast('Worker URL not configured. Contact IT.', 'error'); return;
