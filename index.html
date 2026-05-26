@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PC Annual Review — Smile Haus</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --onyx: #2A2E31; --alabaster: #F2EFE8; --sandstone: #D6CDBD;
+  --taupe: #C2B09E; --earth: #877765; --white: #FFFFFF; --radius: 6px;
+  --font-head: 'Cormorant Garamond', serif; --font-body: 'Jost', sans-serif;
+}
+body { font-family: var(--font-body); background: var(--alabaster); color: var(--onyx); font-size: 15px; line-height: 1.5; }
+
+/* Header */
+.site-header { background: var(--onyx); padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.site-header img { height: 36px; flex-shrink: 0; }
+.site-header h1 { font-family: var(--font-head); color: var(--white); font-weight: 300; font-size: 22px; letter-spacing: 0.04em; flex: 1; text-align: center; }
+.settings-btn { background: none; border: 1px solid rgba(255,255,255,0.3); color: var(--white); border-radius: var(--radius); padding: 6px 14px; cursor: pointer; font-family: var(--font-body); font-size: 13px; white-space: nowrap; }
+.settings-btn:hover { border-color: rgba(255,255,255,0.7); }
+.reset-btn { background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); border-radius: var(--radius); padding: 6px 14px; cursor: pointer; font-family: var(--font-body); font-size: 13px; white-space: nowrap; transition: all 0.15s; }
+.reset-btn:hover { border-color: #ff8a80; color: #ff8a80; }
+.template-btn { background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); border-radius: var(--radius); padding: 6px 14px; cursor: pointer; font-family: var(--font-body); font-size: 13px; white-space: nowrap; transition: all 0.15s; }
+.template-btn:hover { border-color: #81c784; color: #81c784; }
+.edit-labels-btn { background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); border-radius: var(--radius); padding: 6px 14px; cursor: pointer; font-family: var(--font-body); font-size: 13px; white-space: nowrap; transition: all 0.15s; }
+.edit-labels-btn:hover { border-color: #64b5f6; color: #64b5f6; }
+.edit-labels-btn.active { border-color: #64b5f6; color: #64b5f6; background: rgba(100,181,246,0.15); }
+.edit-lock-btn { background: none; border: 1px solid rgba(255,255,255,0.3); color: var(--white); border-radius: var(--radius); padding: 6px 14px; cursor: pointer; font-family: var(--font-body); font-size: 13px; white-space: nowrap; transition: all 0.15s; }
+.edit-lock-btn:hover { border-color: rgba(255,255,255,0.7); }
+.edit-lock-btn.locked { border-color: rgba(255,200,100,0.5); color: #ffd580; }
+.edit-lock-btn.locked:hover { border-color: #ffd580; }
+/* Locked form state */
+body.form-locked input:not(#pinInput), body.form-locked select, body.form-locked textarea { opacity: 0.7; pointer-events: none; background: #f5f3ef; }
+body.form-locked .skill-btn, body.form-locked .score-btn, body.form-locked .pass-all-btn, body.form-locked .fail-all-btn, body.form-locked .tier-expand-btn, body.form-locked #submitBtn { pointer-events: none; opacity: 0.55; }
+body.form-locked .kpi-na-btn { pointer-events: none; opacity: 0.55; }
+.pin-error { color: #c0392b; font-size: 13px; margin-top: 6px; display: none; }
+
+/* Main */
+.main { max-width: 960px; margin: 0 auto; padding: 28px 24px 80px; }
+
+/* Cards */
+.card { background: var(--white); border: 1px solid var(--sandstone); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; }
+.card-header { background: var(--onyx); color: var(--white); padding: 11px 20px; display: flex; align-items: center; justify-content: space-between; }
+.card-header h2 { font-family: var(--font-head); font-weight: 300; font-size: 18px; letter-spacing: 0.03em; }
+.card-header .pts { font-size: 12px; opacity: 0.55; }
+.card-body { padding: 20px; }
+
+/* Info grid */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+label.field-label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--earth); margin-bottom: 4px; }
+input[type=text], input[type=date], input[type=number], select, textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--sandstone); border-radius: var(--radius);
+  font-family: var(--font-body); font-size: 14px; background: var(--white); color: var(--onyx);
+}
+textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--earth); border-color: transparent; }
+
+/* Score summary sticky bar */
+.score-summary {
+  position: sticky; top: 10px; z-index: 10;
+  background: var(--onyx); color: var(--white); border-radius: var(--radius);
+  padding: 14px 24px; margin-bottom: 20px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr 2fr; gap: 16px; align-items: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+.sum-block { text-align: center; }
+.sum-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.5; margin-bottom: 2px; }
+.sum-value { font-size: 22px; font-weight: 600; font-family: var(--font-head); line-height: 1; }
+.sum-value.highlight { color: var(--taupe); }
+.band-block { text-align: right; }
+.band-name { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.raise-preview { font-size: 28px; font-weight: 700; font-family: var(--font-head); line-height: 1; }
+.new-rate { font-size: 12px; opacity: 0.55; margin-top: 3px; }
+.band-pip { color: #e87770; } .band-coaching { color: #e8c170; }
+.band-meets { color: #a8c470; } .band-exceeds { color: #70c4b8; } .band-outstanding { color: #c4a070; }
+
+/* Scale bar */
+.scale-bar { background: var(--white); border: 1px solid var(--sandstone); border-radius: var(--radius); padding: 8px 16px; font-size: 12px; text-align: center; color: var(--earth); margin-bottom: 18px; }
+.scale-bar b { color: var(--onyx); }
+
+/* Tables */
+.kpi-table, .perf-table { width: 100%; border-collapse: collapse; }
+.kpi-table th, .perf-table th { background: var(--earth); color: var(--white); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 9px 14px; text-align: left; }
+.kpi-table th.c, .perf-table th.c { text-align: center; }
+.kpi-table td, .perf-table td { padding: 9px 14px; border-bottom: 1px solid var(--sandstone); vertical-align: middle; }
+.kpi-table tr:last-child td, .perf-table tr:last-child td { border-bottom: none; }
+.kpi-table tr:nth-child(even) td, .perf-table tr:nth-child(even) td { background: var(--alabaster); }
+.kpi-name, .crit-name { font-size: 14px; font-weight: 500; }
+.kpi-sub, .crit-desc { font-size: 12px; color: #5a4a3c; margin-top: 2px; }
+.kpi-target-input { border: none; background: transparent; font-family: var(--font-body); font-size: 13px; color: #5a4a3c; text-align: center; width: 100%; padding: 0; cursor: default; }
+.kpi-target-input:not(:disabled) { border-bottom: 1px dashed var(--sandstone); cursor: text; background: #fffdf9; padding: 2px 4px; border-radius: 3px; }
+[contenteditable="true"] { outline: none; border-bottom: 1px dashed var(--sandstone); border-radius: 2px; cursor: text; background: #fffdf9; padding: 0 2px; }
+[contenteditable="true"]:focus { background: #fff8ee; border-bottom-color: var(--earth); }
+/* Editable labels — always click-to-edit */
+[data-editable] { cursor: text; border-radius: 3px; min-width: 20px; display: inline-block; padding: 0 2px; transition: background 0.1s; }
+[data-editable]:hover { background: #fffdf9; outline: 1px dashed var(--sandstone); outline-offset: 1px; }
+[data-editable]:focus { background: #fff8ee !important; outline: 2px solid var(--earth) !important; outline-offset: 1px; }
+/* Legacy edit-mode class — kept for compatibility */
+body.edit-mode [data-editable] { outline: 1px dashed var(--earth) !important; background: #fffdf9 !important; border-radius: 3px; cursor: text !important; min-width: 30px; display: inline-block; padding: 0 3px; }
+
+/* Score buttons (1-5) */
+.score-group { display: flex; gap: 4px; justify-content: center; }
+.score-btn {
+  width: 34px; height: 34px; border: 1.5px solid var(--sandstone); background: var(--white);
+  border-radius: 50%; cursor: pointer; font-family: var(--font-body); font-size: 14px; font-weight: 500;
+  color: var(--onyx); transition: all 0.12s; display: flex; align-items: center; justify-content: center;
+}
+.score-btn:hover { border-color: var(--earth); color: var(--earth); }
+.score-btn.active { background: var(--earth); border-color: var(--earth); color: var(--white); }
+.score-na { width: 38px; height: 34px; border: 1.5px solid var(--sandstone); background: var(--white); border-radius: var(--radius); cursor: pointer; font-family: var(--font-body); font-size: 11px; font-weight: 500; color: var(--taupe); transition: all 0.12s; }
+.score-na:hover { border-color: var(--taupe); }
+.score-na.active { background: var(--taupe); border-color: var(--taupe); color: var(--white); }
+
+/* Section subtotals + notes */
+.subtotal-row { text-align: right; padding: 8px 14px; font-size: 13px; color: var(--earth); font-weight: 600; border-top: 1px solid var(--sandstone); background: var(--alabaster); }
+.section-notes { padding: 12px 14px 14px; border-top: 1px solid #f0ece4; }
+.section-notes .field-label { margin-bottom: 6px; }
+
+/* Perf subsection label */
+.subsection-label { background: var(--sandstone); padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--onyx); letter-spacing: 0.02em; border-top: 1px solid #c8bcae; }
+.subsection-label:first-child { border-top: none; }
+
+/* Narrative sections */
+.narrative-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.narrative-field { display: flex; flex-direction: column; }
+.narrative-field textarea { flex: 1; min-height: 100px; }
+.narrative-full { grid-column: 1 / -1; }
+
+/* Tier checklist */
+.tier-accordion { border: 1px solid var(--sandstone); border-radius: var(--radius); overflow: hidden; margin-bottom: 0; }
+.tier-row { border-bottom: 1px solid var(--sandstone); }
+.tier-row:last-child { border-bottom: none; }
+.tier-header { display: flex; align-items: center; padding: 10px 16px; gap: 8px; width: 100%; box-sizing: border-box; }
+.tier-header.current-tier { background: #f0ede6; }
+.tier-header.next-tier { background: #f5f0eb; }
+.tier-header-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
+.tier-header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto; }
+.tier-badge { font-size: 12px; font-weight: 700; background: var(--onyx); color: var(--white); padding: 2px 8px; border-radius: 3px; flex-shrink: 0; }
+.tier-badge.current { background: var(--earth); }
+.tier-badge.next { background: var(--taupe); }
+.tier-title { font-size: 13px; font-weight: 500; }
+.add-skill-btn { font-family: var(--font-body); font-size: 12px; color: var(--earth); background: none; border: 1px dashed var(--sandstone); border-radius: 4px; padding: 4px 12px; cursor: pointer; width: 100%; text-align: left; margin-top: 4px; transition: all 0.12s; }
+.add-skill-btn:hover { border-color: var(--earth); background: #faf8f4; }
+body.form-locked .add-skill-btn { display: none; }
+.skill-name[contenteditable="true"]:empty:before { content: "Enter skill description…"; color: var(--taupe); font-style: italic; pointer-events: none; }
+.tier-rate { font-size: 12px; color: var(--taupe); flex-shrink: 0; }
+.tier-gate-status { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 3px; flex-shrink: 0; }
+.gate-pass { background: #d4edda; color: #2d6a3f; }
+.gate-fail { background: #fde8e8; color: #8a3a3a; }
+.tier-expand-btn { background: none; border: 1px solid var(--sandstone); border-radius: 4px; width: 28px; height: 26px; cursor: pointer; font-size: 15px; line-height: 1; color: var(--taupe); flex-shrink: 0; transition: transform 0.18s ease, border-color 0.15s, color 0.15s; display: flex; align-items: center; justify-content: center; transform: rotate(0deg); }
+.tier-expand-btn:hover { border-color: var(--earth); color: var(--earth); }
+.tier-expand-btn.open { transform: rotate(90deg); }
+.pass-all-btn {
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  background: #d4edda; border: 1.5px solid #2d6a3f; color: #2d6a3f;
+  border-radius: 4px; padding: 3px 9px; cursor: pointer; flex-shrink: 0;
+  transition: all 0.12s; white-space: nowrap;
+}
+.pass-all-btn:hover { background: #2d6a3f; color: #fff; }
+.pass-all-btn.all-passed { background: #2d6a3f; color: #fff; }
+.fail-all-btn {
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  background: #fde8e8; border: 1.5px solid #8a3a3a; color: #8a3a3a;
+  border-radius: 4px; padding: 3px 9px; cursor: pointer; flex-shrink: 0;
+  transition: all 0.12s; white-space: nowrap;
+}
+.fail-all-btn:hover { background: #8a3a3a; color: #fff; }
+.fail-all-btn.all-failed { background: #8a3a3a; color: #fff; }
+
+.tier-body { display: none; border-top: 1px solid var(--sandstone); }
+.tier-body.open { display: block; }
+.skill-row { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid #f0ece4; }
+.skill-row:last-child { border-bottom: none; }
+.skill-row:nth-child(even) { background: #fafaf8; }
+.skill-name { flex: 1; font-size: 13px; color: var(--onyx); line-height: 1.4; font-family: var(--font-body); font-weight: 400; cursor: default; }
+.skill-name[contenteditable="true"] { color: var(--onyx); font-size: 13px; font-family: var(--font-body); font-weight: 400; cursor: text; outline: none; border: none; background: none; -webkit-font-smoothing: antialiased; }
+.skill-delete-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--taupe); padding: 2px 4px; border-radius: 3px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s, color 0.15s; }
+.skill-row:hover .skill-delete-btn { opacity: 1; }
+.skill-delete-btn:hover { color: #c0392b; }
+body.form-locked .skill-delete-btn { display: none; }
+.skill-btns { display: flex; gap: 4px; flex-shrink: 0; }
+.skill-btn {
+  width: 32px; height: 28px; border: 1.5px solid var(--sandstone); background: var(--white);
+  border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.12s;
+  display: flex; align-items: center; justify-content: center;
+}
+.skill-btn:hover { border-color: var(--earth); }
+.skill-btn.can-do { background: #d4edda; border-color: #2d6a3f; color: #2d6a3f; }
+.skill-btn.cannot-do { background: #fde8e8; border-color: #c0392b; color: #c0392b; }
+
+/* Gate summary */
+.gate-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.gate-box { padding: 14px 16px; border-radius: var(--radius); border: 1.5px solid var(--sandstone); text-align: center; }
+.gate-box.pass { background: #d4edda; border-color: #2d6a3f; }
+.gate-box.fail { background: #fde8e8; border-color: #e74c3c; }
+.gate-box.incomplete { background: var(--alabaster); }
+.gate-box-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; color: var(--earth); }
+.gate-box-status { font-size: 16px; font-weight: 700; }
+.gate-box.pass .gate-box-status { color: #2d6a3f; }
+.gate-box.fail .gate-box-status { color: #c0392b; }
+.gate-box.incomplete .gate-box-status { color: var(--taupe); }
+.gate-box-sub { font-size: 11px; color: var(--taupe); margin-top: 3px; }
+
+/* Signature block */
+.sig-block { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+.sig-line { border-bottom: 1.5px solid var(--sandstone); min-height: 42px; padding: 8px 12px; font-size: 14px; background: var(--white); border-radius: 0; width: 100%; border-top: none; border-left: none; border-right: none; }
+
+/* Override box */
+.override-box { margin-top: 16px; border: 1.5px solid var(--sandstone); border-radius: var(--radius); overflow: hidden; }
+.override-toggle { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--alabaster); cursor: pointer; user-select: none; }
+.override-toggle input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--earth); cursor: pointer; flex-shrink: 0; }
+.override-toggle-label { font-size: 13px; font-weight: 600; color: var(--onyx); }
+.override-toggle-sub { font-size: 12px; color: var(--earth); margin-left: auto; }
+.override-body { display: none; padding: 16px; border-top: 1px solid var(--sandstone); background: #fffdf9; }
+.override-body.open { display: block; }
+
+/* Goal dates */
+.goal-dates-wrap { border: 1px solid var(--sandstone); border-radius: var(--radius); overflow: hidden; }
+.goal-dates-toggle { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--alabaster); cursor: pointer; user-select: none; }
+.goal-dates-body { display: none; padding: 14px; border-top: 1px solid var(--sandstone); background: #fffdf9; }
+.goal-dates-body.open { display: block; }
+.goal-row { display: grid; grid-template-columns: 1fr 160px 130px 32px; gap: 8px; align-items: end; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed var(--sandstone); }
+.goal-row:last-of-type { border-bottom: none; margin-bottom: 6px; }
+.goal-row-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--earth); margin-bottom: 3px; }
+.goal-remove-btn { background: none; border: 1px solid #e0b0b0; color: #c0392b; border-radius: 4px; width: 30px; height: 30px; cursor: pointer; font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; align-self: end; }
+.goal-remove-btn:hover { background: #fde8e8; }
+.add-goal-btn { font-family: var(--font-body); font-size: 12px; color: var(--earth); background: none; border: 1px dashed var(--sandstone); border-radius: 4px; padding: 5px 14px; cursor: pointer; width: 100%; text-align: center; margin-top: 4px; transition: all 0.12s; }
+.add-goal-btn:hover { border-color: var(--earth); background: #faf8f4; }
+
+/* Salary conversion card */
+.salary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: end; }
+.salary-result { background: var(--alabaster); border: 1px solid var(--sandstone); border-radius: var(--radius); padding: 12px 16px; }
+.salary-result-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--earth); margin-bottom: 4px; }
+.salary-result-value { font-size: 22px; font-family: var(--font-head); font-weight: 400; color: var(--onyx); line-height: 1.1; }
+.salary-result-sub { font-size: 11px; color: #877765; margin-top: 2px; }
+.salary-result.highlight { background: var(--onyx); border-color: var(--onyx); }
+.salary-result.highlight .salary-result-label { color: var(--taupe); }
+.salary-result.highlight .salary-result-value { color: var(--white); }
+.salary-result.highlight .salary-result-sub { color: rgba(255,255,255,0.5); }
+.salary-note { font-size: 11px; color: var(--earth); margin-top: 10px; text-align: center; }
+
+/* Submit */
+.submit-section { background: var(--white); border: 1px solid var(--sandstone); border-radius: var(--radius); padding: 24px; margin-top: 20px; }
+.submit-section h2 { font-family: var(--font-head); font-weight: 400; font-size: 20px; margin-bottom: 18px; }
+.submit-btn { background: var(--earth); color: var(--white); border: none; border-radius: var(--radius); padding: 14px 32px; font-family: var(--font-body); font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; letter-spacing: 0.03em; transition: background 0.2s; margin-top: 8px; }
+.submit-btn:hover { background: var(--onyx); }
+.submit-btn:disabled { background: var(--sandstone); cursor: not-allowed; }
+.preview-pdf-btn { background: none; border: 1px solid var(--sandstone); color: var(--earth); border-radius: var(--radius); padding: 9px 20px; font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 8px; transition: all 0.15s; }
+.preview-pdf-btn:hover { border-color: var(--earth); background: var(--earth); color: var(--white); }
+.preview-pdf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Dividers */
+.section-divider { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--earth); padding: 8px 0 6px; border-bottom: 1px solid var(--sandstone); margin-bottom: 14px; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--white); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+.modal h3 { font-family: var(--font-head); font-weight: 400; font-size: 20px; margin-bottom: 6px; }
+.modal-hint { font-size: 13px; color: var(--taupe); margin-bottom: 20px; }
+.modal-field { margin-bottom: 14px; }
+.modal-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--earth); margin: 18px 0 10px; border-top: 1px solid var(--sandstone); padding-top: 14px; }
+.modal-actions { margin-top: 20px; display: flex; gap: 10px; }
+.btn-save { background: var(--earth); color: var(--white); border: none; padding: 10px 20px; border-radius: var(--radius); cursor: pointer; font-family: var(--font-body); font-size: 14px; font-weight: 500; }
+.btn-cancel { background: none; border: 1px solid var(--sandstone); padding: 10px 20px; border-radius: var(--radius); cursor: pointer; font-family: var(--font-body); font-size: 14px; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--onyx); color: var(--white); padding: 14px 20px; border-radius: var(--radius); font-size: 14px; z-index: 200; opacity: 0; transform: translateY(10px); transition: all 0.3s; max-width: 380px; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.success { background: #3a7a4a; }
+.toast.error { background: #8a3a3a; }
+
+/* Footer */
+.site-footer { background: var(--onyx); color: rgba(255,255,255,0.35); text-align: center; padding: 18px; font-size: 12px; margin-top: 48px; }
+.site-footer img { height: 20px; opacity: 0.3; vertical-align: middle; margin-right: 8px; }
+
+/* Mobile */
+@media (max-width: 640px) {
+  .info-grid, .narrative-grid, .sig-block, .gate-summary { grid-template-columns: 1fr; }
+  .score-summary { grid-template-columns: 1fr 1fr; }
+  .sum-block:nth-child(3) { display: none; }
+  .site-header { padding: 12px 14px; }
+  .site-header h1 { font-size: 16px; }
+  .main { padding: 14px 12px 60px; }
+  .score-btn { width: 30px; height: 30px; font-size: 13px; }
+  .band-block { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <img src="logo-white.png" alt="Smile Haus" onerror="this.style.display='none'">
+  <h1>Patient Coordinator Annual Review</h1>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <a id="backToHomeBtn" href="https://sh-review-dashboard.pages.dev/" style="display:none;padding:6px 13px;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.3);border-radius:7px;color:#fff;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">&#127968; Home</a>
+    <a id="backToRecordsBtn" href="https://sh-review-dashboard.pages.dev/records.html" style="display:none;padding:6px 13px;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.3);border-radius:7px;color:#fff;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">&#8592; Records</a>
+    <button id="headerSaveDraftBtn" onclick="saveDraft()" style="display:none;padding:6px 13px;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.3);border-radius:7px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">&#128190; Save Draft</button>
+    <button id="editLockBtn" class="edit-lock-btn" onclick="toggleLock()">&#9998; Edit</button>
+    <button class="reset-btn" onclick="confirmReset()">&#8635; Reset</button>
+    <button class="settings-btn" onclick="openSettingsGated()">&#9881; Settings</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Sticky score summary -->
+  <div class="score-summary">
+    <div class="sum-block">
+      <div class="sum-label">Part I — KPIs</div>
+      <div class="sum-value"><span id="p1Total">0</span><span style="font-size:12px;opacity:0.4">/<span id="p1Max">40</span></span></div>
+    </div>
+    <div class="sum-block">
+      <div class="sum-label">Part II — Performance</div>
+      <div class="sum-value"><span id="p2Total">0</span><span style="font-size:12px;opacity:0.4">/75</span></div>
+    </div>
+    <div class="sum-block">
+      <div class="sum-label">Total Score</div>
+      <div class="sum-value highlight"><span id="totalScore">0</span><span style="font-size:12px;opacity:0.4">/<span id="totalMax">115</span></span></div>
+    </div>
+    <div class="band-block">
+      <div class="band-name" id="bandName" style="opacity:0.35;">Fill in scores below</div>
+      <div class="raise-preview" id="raisePreview">—</div>
+      <div class="new-rate" id="newRatePreview">Select tier &amp; enter scores</div>
+      <div class="new-rate" id="salaryPreview" style="opacity:0.4;margin-top:1px;display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Employee Info -->
+  <div class="card">
+    <div class="card-header"><h2>Employee Information</h2></div>
+    <div class="card-body">
+      <div class="info-grid">
+        <div><label class="field-label">PC Name</label><input type="text" id="pcName" placeholder="Full name"></div>
+        <div>
+          <label class="field-label">Home Office</label>
+          <select id="homeOffice" onchange="onOfficeChange()">
+            <option value="">— Select office —</option>
+            <option>Georgetown</option><option>On the Square</option><option>Austin</option>
+            <option>Implant Center</option><option>Medical Parkway</option><option>Arboretum</option>
+            <option>Pflugerville</option><option>South Austin</option>
+            <option>New Braunfels Dental Arts</option><option>Anderson Mill</option>
+          </select>
+        </div>
+        <div><label class="field-label">Current Hourly Rate ($)</label><input type="number" id="currentRate" placeholder="e.g. 18.50" step="0.25" min="14" max="35" oninput="onRateChange()"></div>
+        <div>
+          <label class="field-label">Current Tier <span id="tierAutoLabel" style="font-size:10px;font-weight:400;color:var(--taupe);text-transform:none;letter-spacing:0;margin-left:4px;"></span></label>
+          <select id="currentTier" onchange="onTierChange()">
+            <option value="">— Select tier —</option>
+          </select>
+        </div>
+        <div><label class="field-label">Review Period</label><input type="text" id="reviewPeriod" placeholder="e.g. Jan 2025 – Dec 2025"></div>
+        <div><label class="field-label">Review Date</label><input type="date" id="reviewDate"></div>
+        <div><label class="field-label">Reviewer (OM Name)</label><input type="text" id="reviewerName" placeholder="Office Manager name"></div>
+        <div><label class="field-label">Hire Date</label><input type="date" id="hireDate"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rating scale -->
+  <div class="scale-bar">
+    <b>Rating Scale</b> &nbsp;·&nbsp; <b>1</b> Does Not Meet &nbsp;·&nbsp; <b>2</b> Partially Meets &nbsp;·&nbsp; <b>3</b> Meets Expectations &nbsp;·&nbsp; <b>4</b> Exceeds &nbsp;·&nbsp; <b>5</b> Outstanding
+  </div>
+
+  <!-- Part I: KPIs -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Part I — KPI Performance</h2>
+      <span class="pts" id="p1Header">/ 40 pts</span>
+    </div>
+    <div style="padding:0">
+      <table class="kpi-table">
+        <thead><tr>
+          <th style="width:48%">KPI</th>
+          <th style="width:18%;text-align:center">Target</th>
+          <th style="width:34%;text-align:center">Score (1–5)</th>
+        </tr></thead>
+        <tbody id="kpiBody"></tbody>
+      </table>
+      <div class="subtotal-row">Part I Total: <span id="kpiSubtotal">0</span> / <span id="kpiDenom">40</span></div>
+      <div class="section-notes">
+        <label class="field-label">KPI Notes — Data Sources, Context, Exceptions</label>
+        <textarea id="kpiNotes" placeholder="Pull actuals from Oryx reports and KPI dashboards. Note data source, review period, and any extenuating circumstances."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Part II: In-Office Performance -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Part II — In-Office Performance</h2>
+      <span class="pts">/ 75 pts (15 criteria × 5)</span>
+    </div>
+    <div style="padding:0" id="perfBody"></div>
+  </div>
+
+  <!-- Tier Competency Checklist -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Tier Competency Checklist</h2>
+      <span class="pts">Gate A · Gate B</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--taupe);margin-bottom:14px;">
+        Mark each skill: <strong style="color:#2d6a3f">✓ Can do</strong> or <strong style="color:#c0392b">✗ Cannot do</strong>.
+        Leave blank if not yet evaluated. <strong>Gate A</strong> = all skills at current tier and below are ✓.
+        <strong>Gate B</strong> = all skills at next tier are also ✓ (required to promote).
+      </p>
+      <div class="tier-accordion" id="tierAccordion"></div>
+      <div class="gate-summary" id="gateSummary">
+        <div class="gate-box incomplete" id="gateABox">
+          <div class="gate-box-label">Gate A — Current Tier Mastery</div>
+          <div class="gate-box-status" id="gateAStatus">Select your tier above</div>
+          <div class="gate-box-sub" id="gateASub">Required for any raise</div>
+        </div>
+        <div class="gate-box incomplete" id="gateBBox">
+          <div class="gate-box-label">Gate B — Next Tier Mastery</div>
+          <div class="gate-box-status" id="gateBStatus">Select your tier above</div>
+          <div class="gate-box-sub" id="gateBSub">Required for promotion + score ≥ 85</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager Override -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Manager Override</h2>
+      <span class="pts">Optional</span>
+    </div>
+    <div class="card-body">
+      <div class="override-box" id="overrideBox">
+        <div class="override-toggle" onclick="toggleOverride()">
+          <input type="checkbox" id="overrideCheck" onclick="event.stopPropagation(); toggleOverride()">
+          <span class="override-toggle-label">Manager Override — Grant Raise Outside Formula</span>
+          <span class="override-toggle-sub" id="overrideBadge">Off</span>
+        </div>
+        <div class="override-body" id="overrideBody">
+          <label class="field-label" style="margin-bottom:6px;">Override Raise Amount</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <span style="font-size:14px;font-weight:600;color:var(--earth);">+$</span>
+            <input type="number" id="overrideRaise" min="0" step="0.25" placeholder="0.00"
+              style="max-width:110px;" oninput="onOverrideRaiseChange()">
+            <span style="font-size:13px;color:var(--earth);">/hr</span>
+            <span id="overrideNewRatePreview" style="font-size:12px;color:#5a4a3c;margin-left:4px;"></span>
+          </div>
+          <!-- Convert to Salary toggle -->
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--alabaster);border:1px solid var(--sandstone);border-radius:var(--radius);margin-bottom:14px;cursor:pointer;" onclick="toggleConvertToSalary()">
+            <input type="checkbox" id="convertToSalaryCheck" onclick="event.stopPropagation();toggleConvertToSalary()" style="width:15px;height:15px;accent-color:var(--earth);cursor:pointer;flex-shrink:0;">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--onyx);">Convert to Salary</div>
+              <div style="font-size:11px;color:var(--earth);">Transitioning this employee to salaried compensation</div>
+            </div>
+          </div>
+          <label class="field-label" style="margin-bottom:6px;">Override Justification</label>
+          <textarea id="overrideComment" rows="3" placeholder="Explain the reason for granting a raise outside the standard formula (e.g. retention risk, exceptional circumstances, market adjustment)…" style="width:100%;margin-bottom:14px;"></textarea>
+
+          <!-- Goal Dates -->
+          <div class="goal-dates-wrap">
+            <div class="goal-dates-toggle" onclick="toggleGoalDates()">
+              <input type="checkbox" id="goalDatesCheck" onclick="event.stopPropagation();toggleGoalDates()" style="width:15px;height:15px;accent-color:var(--earth);cursor:pointer;flex-shrink:0;">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--onyx);">Set Goal Date(s)</div>
+                <div style="font-size:11px;color:var(--earth);">Add performance goals with target dates and raise milestones</div>
+              </div>
+            </div>
+            <div class="goal-dates-body" id="goalDatesBody">
+              <div id="goalsList"></div>
+              <button type="button" class="add-goal-btn" onclick="addGoal()">+ Add Goal</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Salary Conversion (hidden until Convert to Salary is checked) -->
+  <div class="card" id="salaryCard" style="display:none;">
+    <div class="card-header">
+      <h2>Salary Conversion</h2>
+      <span class="pts">Hourly ↔ Annual</span>
+    </div>
+    <div class="card-body">
+      <div class="salary-grid">
+        <div>
+          <label class="field-label">Annual Salary (optional)</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:14px;font-weight:600;color:var(--earth);">$</span>
+            <input type="number" id="salaryInput" min="0" step="500" placeholder="e.g. 45,000"
+              style="flex:1;" oninput="onSalaryInput()">
+            <span style="font-size:13px;color:var(--earth);">/yr</span>
+          </div>
+          <div style="font-size:11px;color:var(--earth);margin-top:4px;">Type a salary to see hourly equivalent, or leave blank to convert from hourly rate above.</div>
+        </div>
+        <div class="salary-result" id="salaryCurrentResult">
+          <div class="salary-result-label">Current Rate</div>
+          <div class="salary-result-value" id="salaryCurrentAnnual">—</div>
+          <div class="salary-result-sub" id="salaryCurrentHourly">Enter current rate above</div>
+        </div>
+        <div class="salary-result highlight" id="salaryNewResult">
+          <div class="salary-result-label">New Rate (after raise)</div>
+          <div class="salary-result-value" id="salaryNewAnnual">—</div>
+          <div class="salary-result-sub" id="salaryNewHourly">Complete scores above</div>
+        </div>
+      </div>
+      <div class="salary-note">Based on 2,080 hours/year (40 hrs/wk × 52 wks). Adjust salary input to use a different basis.</div>
+    </div>
+  </div>
+
+  <!-- Submit for Approval -->
+  <div class="submit-section">
+    <h2>Signatures &amp; Submission</h2>
+
+    <div class="section-divider">Employee</div>
+    <div class="sig-block">
+      <div>
+        <label class="field-label">Employee Signature (typed name)</label>
+        <input type="text" id="employeeSig" placeholder="PC types their full name to acknowledge this review">
+      </div>
+      <div>
+        <label class="field-label">Date</label>
+        <input type="date" id="employeeSigDate">
+      </div>
+    </div>
+
+    <div class="section-divider">Office Manager</div>
+    <div class="sig-block">
+      <div>
+        <label class="field-label">OM Signature (typed name)</label>
+        <input type="text" id="omSignature" placeholder="Office Manager types their full name">
+      </div>
+      <div>
+        <label class="field-label">Date</label>
+        <input type="date" id="submitDate">
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:var(--taupe);margin-bottom:4px;">
+      Submitting emails a raise summary to leadership and creates a ClickUp approval task.
+      Configure both via <strong>Settings</strong> (gear icon, top right).
+    </p>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="preview-pdf-btn" id="previewPdfBtn" onclick="downloadPreviewPDF()">&#128196; Download PDF Preview</button>
+      <button class="preview-pdf-btn" id="saveDraftBtn" onclick="saveDraft()" style="background:#f5f0e8;border-color:#c8b89a;color:#5a4a2a;">&#128190; Save Draft</button>
+      <span id="draftSavedNote" style="font-size:12px;color:#888;display:none;"></span>
+    </div>
+    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Submit for Approval</button>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  <img src="logo-white.png" alt="" onerror="this.style.display='none'">
+  Smile Haus Dental &nbsp;·&nbsp; PC Annual Review System &nbsp;·&nbsp; Confidential
+</footer>
+
+<!-- Reset confirmation modal -->
+<div class="modal-overlay" id="resetModal" onclick="if(event.target===this)closeResetModal()">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
+    <h3 style="margin:0 0 10px;">Reset Form?</h3>
+    <p style="font-size:14px;color:#877765;margin:0 0 24px;">This will clear all scores, selections, and entered data. This cannot be undone.</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
+      <button onclick="resetForm()" style="font-family:var(--font-body);font-size:13px;font-weight:600;background:#c0392b;color:#fff;border:none;border-radius:var(--radius);padding:8px 22px;cursor:pointer;">Yes, Reset Everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <h3>&#9881; Settings</h3>
+    <p class="modal-hint">Worker URL is pre-configured. Only change if redirected by IT.</p>
+    <div class="modal-section-label">Backend Worker URL</div>
+    <div class="modal-field"><label class="field-label">Worker URL</label><input type="text" id="cfg_worker_url" placeholder="https://sh-da-review-worker.smilehaus.workers.dev/submit"></div>
+    <div style="margin-top:8px;">
+      <button class="btn-cancel" id="cuTestBtn" onclick="testWorker()" style="font-size:12px;padding:5px 12px;">&#128337; Test Connection</button>
+      <div id="cuTestResult" style="font-size:12px;margin-top:6px;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="saveSettings()">Save</button>
+      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN modal -->
+<div class="modal-overlay" id="pinModal" onclick="if(event.target===this)closePinModal()">
+  <div class="modal" style="max-width:340px;">
+    <h3>&#9998; Edit Form</h3>
+    <p class="modal-hint">Enter the PIN to unlock editing.</p>
+    <div class="modal-field">
+      <label class="field-label">PIN</label>
+      <input type="password" id="pinInput" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')submitPin()" autocomplete="off">
+      <div class="pin-error" id="pinError">Incorrect PIN. Try again.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="submitPin()">Unlock</button>
+      <button class="btn-cancel" onclick="closePinModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+// PC tier structure — single rate table for all offices
+const TIERS_STANDARD = {
+  T1: { floor:18, ceiling:18, x:0.015, next:'T2', label:'Entry — Just Hired',                rate:'$18/hr'    },
+  T2: { floor:19, ceiling:20, x:0.018, next:'T3', label:'Front Desk Foundations',            rate:'$19–20/hr' },
+  T3: { floor:21, ceiling:22, x:0.020, next:'T4', label:'Insurance & Billing Proficient',    rate:'$21–22/hr' },
+  T4: { floor:23, ceiling:24, x:0.022, next:'T5', label:'Case Acceptance & Financial Coord', rate:'$23–24/hr' },
+  T5: { floor:25, ceiling:26, x:0.025, next:'T6', label:'Lead Patient Coordinator',          rate:'$25–26/hr' },
+  T6: { floor:27, ceiling:29, x:0.028, next:'T7', label:'Senior Coordinator / OM Support',   rate:'$27–29/hr' },
+  T7: { floor:30, ceiling:32, x:0.030, next:null,  label:'Complex Case Mgmt & OM Coverage',  rate:'$30–32/hr' },
+};
+
+function getActiveTiers() {
+  return TIERS_STANDARD;
+}
+
+const TIER_SKILLS = {
+  T1: [
+    'Willing to train full-time; accepts shadowing role',
+    'Learns Oryx PMS patient check-in and checkout basics',
+    'Learns phone etiquette and Smile Haus greeting standards',
+  ],
+  T2: [
+    'Answers phones, takes messages, confirms appointments',
+    'Greets and checks in/out patients using Oryx',
+    'Collects copays and runs card transactions',
+    'Schedules new patient and follow-up appointments',
+    'Verifies basic insurance eligibility in Oryx',
+    'Knows all office scripts and verbiage for common situations',
+  ],
+  T3: [
+    'All T2 competencies confirmed (see T2 above)',
+    'Verifies insurance benefits and coverage details accurately',
+    'Enters treatment plans in Oryx with correct fee codes',
+    'Posts payments and adjustments in Oryx',
+    'End-of-day reconciliation (EOD): balances collections and closes day accurately',
+    'Proficient in ClickUp for task management and Smile Haus processes',
+  ],
+  T4: [
+    'All T3 competencies confirmed (see T3 above)',
+    'Presents treatment plans clearly; achieves 40%+ case acceptance',
+    'Offers and processes CareCredit, Cherry, and HFD financing',
+    'Handles patient objections on cost or scheduling effectively',
+    'Handles billing questions from patients confidently',
+    'Coordinates pre-authorizations and insurance benefit checks',
+    'Explains estimated patient portions accurately (within $20)',
+  ],
+  T5: [
+    'All T4 competencies confirmed (see T4 above)',
+    'Achieves 50%+ same-day treatment conversion',
+    'Manages schedule flow; fills open slots proactively',
+    'Books temps and keeps office fully staffed when coverage gaps arise',
+    'Monitors and fills next-day and next-week schedule gaps',
+    'Handles patient complaints and escalations confidently',
+    'Cross-trains newer PCs and front team members',
+  ],
+  T6: [
+    'All T5 competencies confirmed (see T5 above)',
+    'Handles complex insurance disputes and claim appeals',
+    'Scrambling Eggs: 3-way match (invoice = routing sheet = clinical notes) at 100%',
+    'Covers OM duties when OM is absent',
+    'Manages end-of-month billing close',
+    'Supports other Smile Haus offices remotely when needed',
+  ],
+  T7: [
+    'All T6 competencies confirmed (see T6 above)',
+    'Manages all case types including implants, ortho, and multi-stage treatments',
+    'Full OM coverage capability: scheduling, billing, staff oversight',
+    'Processes and audits EOBs; identifies insurance discrepancies',
+    'Handles complex patient escalations and leadership communications',
+    'Proficient with all Smile Haus processes',
+  ],
+};
+
+const KPIS = [
+  { id:'kpi1', name:'Hygiene Re-Appointment Rate',        sub:'Hygiene recare fill',                     target:'90%+' },
+  { id:'kpi2', name:'Cancellation / Attrition Rate',      sub:'Lower is better',                         target:'< 5%' },
+  { id:'kpi3', name:'Case Acceptance Rate',               sub:'Doctor tx plan acceptance',               target:'40%+' },
+  { id:'kpi4', name:'Collection Rate',                    sub:'Payments collected vs. billed',           target:'95%+' },
+  { id:'kpi5', name:'Schedule Fill Rate',                 sub:'Chairs filled vs. capacity',              target:'95%+' },
+  { id:'kpi6', name:'Same-Day Treatment Conversion',      sub:'Chair-side upsell rate',                  target:'50%+' },
+  { id:'kpi7', name:'Treatment Plan Accuracy',            sub:'Within $20 of actual',                    target:'95%+' },
+  { id:'kpi8', name:'Scrambling Eggs / Billing Accuracy', sub:'Invoice = routing = notes (3-way match)', target:'100%' },
+];
+
+const PERF_SECTIONS = [
+  { id:'A', title:'Attitude, Professionalism & Culture Fit', items:[
+    { id:'a1', name:'Attitude',        desc:'Consistently positive, motivated, brings good energy to team and patients.' },
+    { id:'a2', name:'Professionalism', desc:'On time, dress code, polished front-desk presence, respectful communication.' },
+    { id:'a3', name:'Culture Fit',     desc:'Lives the Modern Family Dentistry philosophy. Patient-first in every interaction.' },
+    { id:'a4', name:'Integrity',       desc:'Honest, accountable, does the right thing even when no one is watching.' },
+    { id:'a5', name:'Reliability',     desc:'Shows up consistently. No unexplained absences or last-minute call-outs.' },
+  ]},
+  { id:'B', title:'Willingness to Learn & Growth Mindset', items:[
+    { id:'b1', name:'Coachability',          desc:'Receives feedback well and applies corrections without defensiveness.' },
+    { id:'b2', name:'Self-Development',      desc:'Proactively learns new skills, reads SOPs, asks good questions.' },
+    { id:'b3', name:'Adaptability',          desc:'Adapts to new workflows, system changes, and office needs without complaint.' },
+    { id:'b4', name:'Ownership of Mistakes', desc:'Owns errors, flags them, and makes it right. Does not hide or deflect.' },
+    { id:'b5', name:'SOP Compliance',        desc:'Follows Smile Haus SOPs consistently. Does not shortcut or improvise.' },
+  ]},
+  { id:'C', title:'Helpfulness & Team Contribution', items:[
+    { id:'c1', name:'Team Player',          desc:'Jumps in to help clinical or front team when needed. No "not my job" mindset.' },
+    { id:'c2', name:'Initiative',           desc:'Sees problems and solves them without being told. Proactive, not reactive.' },
+    { id:'c3', name:'Communication',        desc:'Clear, respectful, and timely communication with team, OM, and patients.' },
+    { id:'c4', name:'Patient Experience',   desc:'Goes above and beyond to make patients feel cared for and respected.' },
+    { id:'c5', name:'Cross-Office Support', desc:'Willing to help cover or support other Smile Haus offices when needed.' },
+  ]},
+];
+
+// ─── CLICKUP CUSTOM FIELD IDs ────────────────────────────────────────────────
+
+const CF = {
+  EMP_NAME:   '7e99e9cd-745c-47d9-865d-32a408855e6b',
+  HOME_OFFICE:'9c6bbd3b-65af-4f58-8db2-12ffc1c977f8',
+  HOME_OFFICE_OPTS: { 'Georgetown':'e5209636-677e-40bd-ba5a-cdd43a1a76aa','On the Square':'7178f463-dfb2-4c54-9ba1-a4515a4718ff','Austin':'5e0e7c00-66f3-4763-b2d5-b299b66e8d8e','Implant Center':'51fcc93d-6e08-433c-b242-50a1260f3f90','Medical Parkway':'974e0f7b-3c37-4c69-9940-cf8579e39348','Arboretum':'6eb75682-7de5-4d0e-8ff7-85809a52b807','Pflugerville':'c9870d6f-4cbc-4511-a53b-e610281f567f','South Austin':'c826cbb5-6f1c-4cad-b919-bbdf8f7635ec','New Braunfels Dental Arts':'a2ea3512-587f-456f-a622-c45cc434ba2b','Anderson Mill':'434453ee-89c6-4eb9-a8c0-14d7e71a7688' },
+  CURRENT_TIER:'1a3b19b0-6cce-4f66-93d5-d8e5ca12f2a6',
+  TIER_OPTS: { 'T1':'b0aa8ef9-af27-4a61-b6f9-a16fead493ad','T2':'6134604f-fd86-427c-ab4b-71197cf59cf0','T3':'0c22559c-7461-489b-b2c3-7032ff0a323f','T4':'089cb50a-3cd1-4174-b99b-ed435d030092','T5':'39008eef-7efc-49b6-9bae-1d54352d9837','T6':'fc11b86b-f9aa-4238-8b6f-3aabda21f5de','T7':'25099a83-4a39-4936-a1cf-c78c1253ceb8' },
+  CURRENT_RATE:  '9ba6e30b-20f6-4b34-9a26-c8683def15b4',
+  REVIEW_PERIOD: '96d77be1-08b9-4192-82fb-8ca1d8229f72',
+  REVIEWER_NAME: '303a63c3-6e10-46d6-8d29-3f13c52cca0e',
+  REVIEW_DATE:   '933ff3b7-a4db-43d7-ad5d-99ef49b986de',
+  KPI_SCORE:     '70357de3-d5f6-4f73-b7b8-c4043e3b2712',
+  PERF_SCORE:    '12bd1ea2-ead4-452b-93b2-148cbbb2543e',
+  TOTAL_SCORE:   '77c85b62-11ec-4ee9-a28a-7afce33faae8',
+  GATE_A:        '5e5b6db3-84ae-4ff7-a49f-1bd96353d04c',
+  GATE_B:        'e5399d96-fe8b-470a-8d47-b3eb8ec0c519',
+  RAISE_AMOUNT:  '938d40cb-8bea-4414-b6e7-f79a88bb806a',
+  NEW_RATE:      'fcf08bac-5bb8-493b-8a1a-0c32ebd51a1b',
+  OUTCOME_BAND:  'c55b9bc8-770a-4333-90a4-626080b348bd',
+  BAND_OPTS: { 'PIP':'5b1113e4-fabb-4d2f-a925-e24a0dc4a592','Coaching Plan':'710f9d5e-0763-41a3-a8c5-aae7c321ccda','Within-Tier Raise':'319fabd9-74c9-4cc5-8b12-6c005fb52d87','Promote':'f12ee967-ce2a-42b8-91c6-c0af12906c54' },
+  TARGET_TIER:   'd66320fd-1aa9-4f6a-b6cb-020fcf4547bb',
+  TARGET_TIER_OPTS: { 'T1':'a3610c82-60b1-4227-834a-45d82620200e','T2':'c6e5e0fd-a576-4e72-ad9c-666b832317ea','T3':'d1220e77-1277-4a5a-a7e9-a423fe620c4a','T4':'87a41ea3-a384-4bb4-8201-d7d72c5f30d2','T5':'4666eb4b-156f-4e00-80cc-ef09e70184ee','T6':'5c88c0f7-8a33-466f-b9dc-29b765f580e0','T7':'bb75cad5-08c8-4759-9425-0cb98eba8640' },
+};
+
+function buildCustomFields() {
+  const f  = id => document.getElementById(id)?.value || '';
+  const t  = id => (document.getElementById(id)?.textContent || '').replace(/[^0-9.-]/g,'');
+  const num = id => { const v = parseFloat(t(id)); return isNaN(v) ? null : v; };
+
+  const office    = f('homeOffice');
+  const tier      = f('currentTier');
+  const band      = (document.getElementById('bandName')?.textContent || '').trim();
+  const targetTier= highestPromoTier || ''; // set by recalc() — highest consecutive passing tier above current
+  const gateA     = (document.getElementById('gateAStatus')?.textContent || '').includes('✓');
+  const gateB     = (document.getElementById('gateBStatus')?.textContent || '').includes('✓');
+  const reviewDateVal = f('reviewDate');
+  const reviewDateMs  = reviewDateVal ? new Date(reviewDateVal).getTime() : null;
+
+  const fields = [
+    { id: CF.EMP_NAME,      value: f('pcName') },
+    { id: CF.CURRENT_RATE,  value: parseFloat(f('currentRate')) || null },
+    { id: CF.REVIEW_PERIOD, value: f('reviewPeriod') },
+    { id: CF.REVIEWER_NAME, value: f('reviewerName') },
+    { id: CF.KPI_SCORE,     value: num('p1Total') },
+    { id: CF.PERF_SCORE,    value: num('p2Total') },
+    { id: CF.TOTAL_SCORE,   value: num('totalScore') },
+    { id: CF.GATE_A,        value: gateA },
+    { id: CF.GATE_B,        value: gateB },
+    { id: CF.RAISE_AMOUNT,  value: num('raisePreview') },
+    { id: CF.NEW_RATE,      value: num('newRatePreview') },
+  ];
+  if (CF.HOME_OFFICE_OPTS[office])  fields.push({ id: CF.HOME_OFFICE,  value: CF.HOME_OFFICE_OPTS[office] });
+  if (CF.TIER_OPTS[tier])           fields.push({ id: CF.CURRENT_TIER, value: CF.TIER_OPTS[tier] });
+  if (CF.BAND_OPTS[band])           fields.push({ id: CF.OUTCOME_BAND, value: CF.BAND_OPTS[band] });
+  if (CF.TARGET_TIER_OPTS[targetTier]) fields.push({ id: CF.TARGET_TIER, value: CF.TARGET_TIER_OPTS[targetTier] });
+  if (reviewDateMs)                 fields.push({ id: CF.REVIEW_DATE,  value: reviewDateMs });
+
+  return fields.filter(f => f.value !== null && f.value !== '' && f.value !== undefined);
+}
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+const scores = {};     // kpi/perf item scores: 1–5 or 'na'
+const skillState = {}; // 'tierKey_idx': 'can' | 'cannot' | null
+let highestPromoTier = null; // highest consecutive passing tier above current (updated by recalc)
+
+// ─── RENDER: KPIs ────────────────────────────────────────────────────────────
+
+function renderKPIs() {
+  document.getElementById('kpiBody').innerHTML = KPIS.map(k => `
+    <tr>
+      <td>
+        <div class="kpi-name" contenteditable="true" data-editable id="kpiName_${k.id}">${k.name}</div>
+        ${k.sub ? `<div class="kpi-sub" contenteditable="true" data-editable id="kpiSub_${k.id}">${k.sub}</div>` : ''}
+      </td>
+      <td style="text-align:center;">
+        <input class="kpi-target-input" id="kpiTarget_${k.id}" value="${k.target}" disabled>
+      </td>
+      <td>
+        <div class="score-group">
+          ${[1,2,3,4,5].map(v => `<button class="score-btn" data-id="${k.id}" data-val="${v}" onclick="setScore('${k.id}',${v})">${v}</button>`).join('')}
+          ${k.optional ? `<button class="score-na" data-id="${k.id}" data-val="na" onclick="setScore('${k.id}','na')">N/A</button>` : ''}
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+// ─── RENDER: Performance ─────────────────────────────────────────────────────
+
+function renderPerf() {
+  document.getElementById('perfBody').innerHTML = PERF_SECTIONS.map(sec => `
+    <div class="subsection-label">${sec.id}. &nbsp;${sec.title}</div>
+    <table class="perf-table">
+      <thead><tr>
+        <th style="width:62%">Performance Standard</th>
+        <th class="c" style="width:38%">Score (1–5)</th>
+      </tr></thead>
+      <tbody>
+        ${sec.items.map(item => `
+          <tr>
+            <td>
+              <div class="crit-name" contenteditable="true" data-editable id="critName_${item.id}">${item.name}</div>
+              <div class="crit-desc" contenteditable="true" data-editable id="critDesc_${item.id}">${item.desc}</div>
+            </td>
+            <td>
+              <div class="score-group">
+                ${[1,2,3,4,5].map(v => `<button class="score-btn" data-id="${item.id}" data-val="${v}" onclick="setScore('${item.id}',${v})">${v}</button>`).join('')}
+              </div>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="subtotal-row">Subsection ${sec.id} Total: <span id="sub${sec.id}Total">0</span> / 25</div>
+    <div class="section-notes">
+      <label class="field-label">Subsection ${sec.id} Notes</label>
+      <textarea id="notes${sec.id}" placeholder="Additional context, specific examples, or observations for this section…"></textarea>
+    </div>`).join('');
+}
+
+// ─── RENDER: Tier Checklist ───────────────────────────────────────────────────
+
+function renderTierAccordion() {
+  const accordion = document.getElementById('tierAccordion');
+  const tierKeys = ['T1','T2','T3','T4','T5','T6','T7'];
+  accordion.innerHTML = tierKeys.map(key => {
+    const tier = TIERS_STANDARD[key];
+    const skills = TIER_SKILLS[key];
+    return `
+    <div class="tier-row" id="tierRow_${key}">
+      <div class="tier-header" id="tierToggle_${key}">
+        <div class="tier-header-left">
+          <span class="tier-badge" id="tierBadge_${key}">${key}</span>
+          <span class="tier-title" contenteditable="true" data-editable id="tierTitle_${key}">${tier.label}</span>
+          <span class="tier-rate" id="tierRate_${key}">${tier.rate}</span>
+          <span class="tier-gate-status gate-na" id="tierGateStatus_${key}">—</span>
+        </div>
+        <div class="tier-header-right">
+          <button class="pass-all-btn" id="passAllBtn_${key}" onclick="passAllSkills('${key}')">✓ Pass All</button>
+          <button class="fail-all-btn" id="failAllBtn_${key}" onclick="failAllSkills('${key}')">✗ Not Yet Passed</button>
+          <button class="tier-expand-btn" id="tierChevron_${key}" onclick="toggleTier('${key}')" title="Expand/collapse">›</button>
+        </div>
+      </div>
+      <div class="tier-body" id="tierBody_${key}">
+        ${skills.map((skill, idx) => `
+          <div class="skill-row">
+            <span class="skill-name" contenteditable="true" data-editable id="skillName_${key}_${idx}">${skill}</span>
+            <div class="skill-btns">
+              <button class="skill-btn" id="skill_${key}_${idx}_can" title="Can do" onclick="setSkill('${key}',${idx},'can')">✓</button>
+              <button class="skill-btn" id="skill_${key}_${idx}_cannot" title="Cannot do" onclick="setSkill('${key}',${idx},'cannot')">✗</button>
+            </div>
+            <button class="skill-delete-btn" title="Remove this skill" onclick="deleteSkill(this)">🗑</button>
+          </div>`).join('')}
+        <div class="add-skill-row" style="padding:6px 12px 10px;">
+          <button class="add-skill-btn" onclick="addSkill('${key}')">+ Add skill / job task</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTier(key) {
+  const body = document.getElementById(`tierBody_${key}`);
+  const chevron = document.getElementById(`tierChevron_${key}`);
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+function openTier(key) {
+  const body = document.getElementById(`tierBody_${key}`);
+  const chevron = document.getElementById(`tierChevron_${key}`);
+  if (body) { body.classList.add('open'); chevron.classList.add('open'); }
+}
+
+// ─── SCORING ─────────────────────────────────────────────────────────────────
+
+function setScore(id, val) {
+  scores[id] = val === 'na' ? 'na' : parseInt(val);
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(btn => {
+    btn.classList.toggle('active', String(btn.dataset.val) === String(val));
+  });
+  recalc();
+  saveFormState();
+}
+
+function passAllSkills(tierKey) {
+  const indices = getSkillIndices(tierKey);
+  const allAlreadyPassed = indices.every(idx => skillState[`${tierKey}_${idx}`] === 'can');
+  indices.forEach(idx => {
+    skillState[`${tierKey}_${idx}`] = allAlreadyPassed ? null : 'can';
+    const canBtn    = document.getElementById(`skill_${tierKey}_${idx}_can`);
+    const cannotBtn = document.getElementById(`skill_${tierKey}_${idx}_cannot`);
+    if (canBtn)    canBtn.className    = 'skill-btn' + (!allAlreadyPassed ? ' can-do' : '');
+    if (cannotBtn) cannotBtn.className = 'skill-btn';
+  });
+  const btn = document.getElementById(`passAllBtn_${tierKey}`);
+  if (btn) btn.classList.toggle('all-passed', !allAlreadyPassed);
+  recalc(); saveFormState();
+}
+
+function failAllSkills(tierKey) {
+  const indices = getSkillIndices(tierKey);
+  const allAlreadyFailed = indices.every(idx => skillState[`${tierKey}_${idx}`] === 'cannot');
+  indices.forEach(idx => {
+    skillState[`${tierKey}_${idx}`] = allAlreadyFailed ? null : 'cannot';
+    const canBtn    = document.getElementById(`skill_${tierKey}_${idx}_can`);
+    const cannotBtn = document.getElementById(`skill_${tierKey}_${idx}_cannot`);
+    if (canBtn)    canBtn.className = 'skill-btn';
+    if (cannotBtn) cannotBtn.className = 'skill-btn' + (!allAlreadyFailed ? ' cannot-do' : '');
+  });
+  const btn = document.getElementById(`failAllBtn_${tierKey}`);
+  if (btn) btn.classList.toggle('all-failed', !allAlreadyFailed);
+  const passBtn = document.getElementById(`passAllBtn_${tierKey}`);
+  if (passBtn) passBtn.classList.remove('all-passed');
+  recalc();
+}
+
+function addSkill(tierKey) {
+  const tbody = document.getElementById(`tierBody_${tierKey}`);
+  const idx = tbody.querySelectorAll('.skill-row').length;
+  const row = document.createElement('div');
+  row.className = 'skill-row';
+  row.innerHTML = `
+    <span class="skill-name" contenteditable="true" data-editable id="skillName_${tierKey}_${idx}"></span>
+    <div class="skill-btns">
+      <button class="skill-btn" id="skill_${tierKey}_${idx}_can" title="Can do" onclick="setSkill('${tierKey}',${idx},'can')">✓</button>
+      <button class="skill-btn" id="skill_${tierKey}_${idx}_cannot" title="Cannot do" onclick="setSkill('${tierKey}',${idx},'cannot')">✗</button>
+    </div>
+    <button class="skill-delete-btn" title="Remove this skill" onclick="deleteSkill(this)">🗑</button>`;
+  const addRow = tbody.querySelector('.add-skill-row');
+  tbody.insertBefore(row, addRow);
+  if (!tbody.classList.contains('open')) toggleTier(tierKey);
+  autoSaveCustomSkills();
+  setTimeout(() => document.getElementById(`skillName_${tierKey}_${idx}`)?.focus(), 50);
+}
+
+function deleteSkill(btn) {
+  const row = btn.closest('.skill-row');
+  if (!row) return;
+  // Clear skillState for any matching key on this row
+  const nameEl = row.querySelector('.skill-name');
+  if (nameEl?.id) {
+    const parts = nameEl.id.split('_'); // skillName_T1_3
+    if (parts.length >= 3) {
+      const key = `${parts[1]}_${parts[2]}`;
+      delete skillState[key];
+    }
+  }
+  row.remove();
+  autoSaveCustomSkills();
+  saveFormState();
+}
+
+function setSkill(tierKey, idx, state) {
+  const k = `${tierKey}_${idx}`;
+  skillState[k] = skillState[k] === state ? null : state;
+  const canBtn    = document.getElementById(`skill_${tierKey}_${idx}_can`);
+  const cannotBtn = document.getElementById(`skill_${tierKey}_${idx}_cannot`);
+  if (canBtn)    canBtn.className    = 'skill-btn' + (skillState[k] === 'can'    ? ' can-do'    : '');
+  if (cannotBtn) cannotBtn.className = 'skill-btn' + (skillState[k] === 'cannot' ? ' cannot-do' : '');
+  recalc();
+  saveFormState();
+}
+
+// ─── CALCULATION ─────────────────────────────────────────────────────────────
+
+// Returns all skill indices for a tier — base + any custom-added rows
+function getSkillIndices(tierKey) {
+  const body = document.getElementById(`tierBody_${tierKey}`);
+  if (!body) return TIER_SKILLS[tierKey].map((_, i) => i);
+  const indices = [];
+  body.querySelectorAll(`[id^="skill_${tierKey}_"][id$="_can"]`).forEach(btn => {
+    const m = btn.id.match(new RegExp(`skill_${tierKey}_(\\d+)_can`));
+    if (m) indices.push(parseInt(m[1]));
+  });
+  return indices.length ? indices : TIER_SKILLS[tierKey].map((_, i) => i);
+}
+
+function getTierGateStatus(tierKey) {
+  // Returns: 'pass' | 'fail' | 'incomplete'
+  const indices = getSkillIndices(tierKey);
+  let allPass = true, anyFail = false;
+  indices.forEach(idx => {
+    const state = skillState[`${tierKey}_${idx}`];
+    if (state === 'can') { /* good */ }
+    else if (state === 'cannot') { anyFail = true; allPass = false; }
+    else { allPass = false; }
+  });
+  if (allPass && indices.length > 0) return 'pass';
+  if (anyFail) return 'fail';
+  return 'incomplete';
+}
+
+function recalc() {
+  // Part I
+  let p1 = 0, p1Max = 0;
+  KPIS.forEach(k => {
+    if (scores[k.id] === 'na') return;
+    p1Max += 5;
+    if (scores[k.id]) p1 += scores[k.id];
+  });
+  if (p1Max === 0) p1Max = 40;
+
+  // Part II
+  let p2 = 0;
+  PERF_SECTIONS.forEach(sec => {
+    let st = 0;
+    sec.items.forEach(item => { st += scores[item.id] || 0; });
+    const el = document.getElementById(`sub${sec.id}Total`);
+    if (el) el.textContent = st;
+    p2 += st;
+  });
+
+  const total = p1 + p2, totalMax = p1Max + 75;
+
+  document.getElementById('p1Total').textContent = p1;
+  document.getElementById('p1Max').textContent = p1Max;
+  document.getElementById('kpiSubtotal').textContent = p1;
+  document.getElementById('kpiDenom').textContent = p1Max;
+  document.getElementById('p1Header').textContent = `/ ${p1Max} pts`;
+  document.getElementById('p2Total').textContent = p2;
+  document.getElementById('totalScore').textContent = total;
+  document.getElementById('totalMax').textContent = totalMax;
+
+  const { band, cls } = getBand(total);
+  const bandEl = document.getElementById('bandName');
+  bandEl.textContent = band; bandEl.className = 'band-name ' + cls; bandEl.style.opacity = '';
+
+  // Gate calculation
+  const tierKey = document.getElementById('currentTier').value;
+  const tier = getActiveTiers()[tierKey];
+  const tierKeys = ['T1','T2','T3','T4','T5','T6','T7'];
+
+  // Update tier badges and status indicators
+  tierKeys.forEach(k => {
+    const toggle = document.getElementById(`tierToggle_${k}`);
+    const badge = document.getElementById(`tierBadge_${k}`);
+    const statusEl = document.getElementById(`tierGateStatus_${k}`);
+    if (!toggle) return;
+    toggle.className = 'tier-header' + (k === tierKey ? ' current-tier' : tier && tier.next === k ? ' next-tier' : '');
+    badge.className = 'tier-badge' + (k === tierKey ? ' current' : tier && tier.next === k ? ' next' : '');
+    const gs = getTierGateStatus(k);
+    statusEl.className = 'tier-gate-status ' + (gs === 'pass' ? 'gate-pass' : gs === 'fail' ? 'gate-fail' : '');
+    statusEl.textContent = gs === 'pass' ? '✓ Pass' : gs === 'fail' ? '✗ Not Yet Passed' : '';
+    const passBtn = document.getElementById(`passAllBtn_${k}`);
+    if (passBtn) passBtn.classList.toggle('all-passed', gs === 'pass');
+  });
+
+  // Gate A: all tiers from T1 through current tier must pass
+  let gateA = false, gateBResult = false;
+  highestPromoTier = null; // reset module-level
+  if (tier) {
+    const currentIdx = tierKeys.indexOf(tierKey);
+    const tiersForA = tierKeys.slice(0, currentIdx + 1);
+    gateA = tiersForA.every(k => getTierGateStatus(k) === 'pass');
+
+    // Gate B: walk upward from current+1 through consecutive passing tiers
+    let promoIdx = currentIdx + 1;
+    while (promoIdx < tierKeys.length) {
+      if (getTierGateStatus(tierKeys[promoIdx]) === 'pass') {
+        highestPromoTier = tierKeys[promoIdx];
+        promoIdx++;
+      } else {
+        break;
+      }
+    }
+    gateBResult = highestPromoTier !== null;
+  }
+
+  // Update gate summary boxes
+  const gateABox = document.getElementById('gateABox');
+  const gateBBox = document.getElementById('gateBBox');
+  const gateAStatus = document.getElementById('gateAStatus');
+  const gateBStatus = document.getElementById('gateBStatus');
+  const gateASub = document.getElementById('gateASub');
+  const gateBSub = document.getElementById('gateBSub');
+
+  if (!tier) {
+    gateABox.className = 'gate-box incomplete'; gateAStatus.textContent = 'Select tier above';
+    gateBBox.className = 'gate-box incomplete'; gateBStatus.textContent = 'Select tier above';
+    gateASub.textContent = 'Required for any raise';
+    gateBSub.textContent = 'Required for promotion + score ≥ 85';
+  } else {
+    gateABox.className = 'gate-box ' + (gateA ? 'pass' : 'fail');
+    gateAStatus.textContent = gateA ? '✓ Passed' : '✗ Not Yet Passed';
+    gateASub.textContent = gateA ? 'Raise eligible based on score' : `Complete all ${tierKey} (and below) skills`;
+
+    if (tier.next) {
+      gateBBox.className = 'gate-box ' + (gateBResult ? 'pass' : 'fail');
+      gateBStatus.textContent = gateBResult ? '✓ Passed' : '✗ Not Yet Passed';
+      if (gateBResult) {
+        const multiTier = highestPromoTier !== tier.next;
+        gateBSub.textContent = `Promotion to ${highestPromoTier} eligible (score ≥ 85)${multiTier ? ' · Multi-tier advance' : ''}`;
+      } else {
+        gateBSub.textContent = `Complete all ${tier.next} skills to promote`;
+      }
+    } else {
+      gateBBox.className = 'gate-box incomplete';
+      gateBStatus.textContent = 'Highest tier';
+      gateBSub.textContent = 'No further tier advancement';
+    }
+  }
+
+  // Override path — bypass formula entirely
+  const ov = typeof getOverrideData === 'function' ? getOverrideData() : { active: false };
+  const baseRateRaw = parseFloat(document.getElementById('currentRate').value) || 0;
+
+  if (ov.active && ov.raiseAmt > 0) {
+    const overrideNewRate = baseRateRaw + ov.raiseAmt;
+    document.getElementById('raisePreview').textContent   = `+$${ov.raiseAmt.toFixed(2)}/hr`;
+    document.getElementById('newRatePreview').textContent = `Override · New rate: $${overrideNewRate.toFixed(2)}/hr`;
+    const np = document.getElementById('overrideNewRatePreview');
+    if (np) np.textContent = baseRateRaw > 0 ? `→ $${overrideNewRate.toFixed(2)}/hr` : '';
+    if (typeof updateSalaryDisplay === 'function') updateSalaryDisplay(baseRateRaw, overrideNewRate);
+    return;
+  }
+
+  // Raise calculation
+  if (!tier || total < 70 || !gateA) {
+    let msg = !tier ? 'Select tier above' : total < 70 ? 'Score below 70 — no raise' : 'Gate A not passed — no raise';
+    document.getElementById('raisePreview').textContent = '$0.00/hr';
+    document.getElementById('newRatePreview').textContent = msg;
+    if (typeof updateSalaryDisplay === 'function') updateSalaryDisplay(baseRateRaw, 0);
+    return;
+  }
+
+  const promoting = gateBResult && total >= 85 && highestPromoTier;
+  const pf = promoting ? 1.5 : 1.0;
+  const targetTierObj = promoting ? getActiveTiers()[highestPromoTier] : tier;
+  const baseRate = baseRateRaw || tier.floor;
+  const rawRaise = (total - 70) * tier.x * pf;
+  let newRate = Math.min(baseRate + rawRaise, targetTierObj.ceiling);
+  newRate = Math.max(newRate, promoting ? targetTierObj.floor : baseRate);
+  const finalRaise = newRate - baseRate;
+
+  document.getElementById('raisePreview').textContent = `+$${finalRaise.toFixed(2)}/hr`;
+  document.getElementById('newRatePreview').textContent = promoting
+    ? `Promoting to ${highestPromoTier} · New rate: $${newRate.toFixed(2)}/hr`
+    : `New rate: $${newRate.toFixed(2)}/hr`;
+  if (typeof updateSalaryDisplay === 'function') updateSalaryDisplay(baseRate, newRate);
+}
+
+function getBand(score) {
+  if (score >= 100) return { band:'Outstanding', cls:'band-outstanding' };
+  if (score >= 85)  return { band:'Exceeds Expectations', cls:'band-exceeds' };
+  if (score >= 70)  return { band:'Meets Expectations', cls:'band-meets' };
+  if (score >= 55)  return { band:'Coaching Plan', cls:'band-coaching' };
+  return { band:'PIP / Does Not Meet', cls:'band-pip' };
+}
+
+// ─── OVERRIDE ────────────────────────────────────────────────────────────────
+
+function toggleOverride() {
+  const cb   = document.getElementById('overrideCheck');
+  const body = document.getElementById('overrideBody');
+  const badge = document.getElementById('overrideBadge');
+  const box  = document.getElementById('overrideBox');
+  if (event && event.target !== cb) cb.checked = !cb.checked;
+  const on = cb.checked;
+  body.classList.toggle('open', on);
+  badge.textContent = on ? 'Active' : 'Off';
+  badge.style.color = on ? '#e87770' : '';
+  box.style.borderColor = on ? '#e87770' : '';
+  recalc();
+  saveFormState();
+}
+
+// ─── GOAL DATES ───────────────────────────────────────────────────────────────
+
+let _goalCount = 0;
+
+function toggleGoalDates() {
+  const cb   = document.getElementById('goalDatesCheck');
+  if (event && event.target !== cb) cb.checked = !cb.checked;
+  const on   = cb.checked;
+  const body = document.getElementById('goalDatesBody');
+  body.classList.toggle('open', on);
+  if (on && document.getElementById('goalsList').children.length === 0) addGoal();
+  saveFormState();
+}
+
+function addGoal(desc = '', date = '', amt = '') {
+  const idx  = _goalCount++;
+  const list = document.getElementById('goalsList');
+  const row  = document.createElement('div');
+  row.className = 'goal-row';
+  row.dataset.goalIdx = idx;
+  row.innerHTML = `
+    <div>
+      <div class="goal-row-label">Goal Description</div>
+      <input type="text" class="goal-desc" placeholder="e.g. Achieve 95% sterilization score" value="${desc}" oninput="saveFormState()" style="width:100%;">
+    </div>
+    <div>
+      <div class="goal-row-label">Target Date</div>
+      <input type="date" class="goal-date" value="${date}" oninput="saveFormState()" style="width:100%;">
+    </div>
+    <div>
+      <div class="goal-row-label">Raise (+$/hr)</div>
+      <input type="number" class="goal-amt" min="0" step="0.25" placeholder="0.00" value="${amt}" oninput="saveFormState()" style="width:100%;">
+    </div>
+    <button type="button" class="goal-remove-btn" onclick="removeGoal(this)" title="Remove">×</button>`;
+  list.appendChild(row);
+  saveFormState();
+}
+
+function removeGoal(btn) {
+  btn.closest('.goal-row').remove();
+  saveFormState();
+}
+
+function getGoals() {
+  return [...document.querySelectorAll('#goalsList .goal-row')].map(row => ({
+    desc: row.querySelector('.goal-desc')?.value || '',
+    date: row.querySelector('.goal-date')?.value || '',
+    amt:  parseFloat(row.querySelector('.goal-amt')?.value) || 0,
+  }));
+}
+
+function getOverrideData() {
+  const cb            = document.getElementById('overrideCheck');
+  const comment       = document.getElementById('overrideComment')?.value || '';
+  const raiseAmt      = parseFloat(document.getElementById('overrideRaise')?.value) || 0;
+  const convertSalary = document.getElementById('convertToSalaryCheck')?.checked || false;
+  const goalsActive   = document.getElementById('goalDatesCheck')?.checked || false;
+  const goals         = goalsActive ? getGoals() : [];
+  return { active: cb?.checked || false, comment, raiseAmt, convertSalary, goalsActive, goals };
+}
+
+// ─── SALARY CONVERSION ───────────────────────────────────────────────────────
+
+const HOURS_PER_YEAR = 2080;
+
+function fmtSalary(n) {
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function toggleConvertToSalary() {
+  const cb = document.getElementById('convertToSalaryCheck');
+  if (event && event.target !== cb) cb.checked = !cb.checked;
+  const on = cb.checked;
+  document.getElementById('salaryCard').style.display = on ? '' : 'none';
+  if (!on) document.getElementById('salaryPreview').style.display = 'none';
+  else recalc();
+  saveFormState();
+}
+
+function onSalaryInput() {
+  const salaryVal = parseFloat(document.getElementById('salaryInput').value);
+  if (salaryVal > 0) {
+    const hourly = salaryVal / HOURS_PER_YEAR;
+    document.getElementById('currentRate').value = hourly.toFixed(2);
+  }
+  recalc();
+  saveFormState();
+}
+
+function updateSalaryDisplay(currentHourly, newHourly) {
+  const salaryInput = parseFloat(document.getElementById('salaryInput')?.value) || 0;
+  const salAnnualEl  = document.getElementById('salaryCurrentAnnual');
+  const salHourlyEl  = document.getElementById('salaryCurrentHourly');
+  const newAnnualEl  = document.getElementById('salaryNewAnnual');
+  const newHourlyEl  = document.getElementById('salaryNewHourly');
+  if (!salAnnualEl) return; // salary card not yet in DOM
+
+  if (currentHourly > 0) {
+    const currentAnnual = salaryInput > 0 ? salaryInput : currentHourly * HOURS_PER_YEAR;
+    salAnnualEl.textContent = fmtSalary(currentAnnual) + '/yr';
+    salHourlyEl.textContent = `$${currentHourly.toFixed(2)}/hr`;
+  } else {
+    salAnnualEl.textContent = '—';
+    salHourlyEl.textContent = 'Enter current rate above';
+  }
+
+  const convertOn = document.getElementById('convertToSalaryCheck')?.checked;
+  const salPrev = document.getElementById('salaryPreview');
+  if (newHourly > 0) {
+    const newAnnual = newHourly * HOURS_PER_YEAR;
+    newAnnualEl.textContent = fmtSalary(newAnnual) + '/yr';
+    newHourlyEl.textContent = `$${newHourly.toFixed(2)}/hr`;
+    if (convertOn) {
+      salPrev.textContent = `≈ ${fmtSalary(newAnnual)}/yr`;
+      salPrev.style.display = 'block';
+    } else {
+      salPrev.style.display = 'none';
+    }
+  } else {
+    newAnnualEl.textContent = '—';
+    newHourlyEl.textContent = 'Complete scores above';
+    salPrev.style.display = 'none';
+  }
+}
+
+function onOverrideRaiseChange() {
+  const ov = getOverrideData();
+  if (!ov.active || ov.raiseAmt <= 0) {
+    document.getElementById('overrideNewRatePreview').textContent = '';
+    recalc();
+    return;
+  }
+  const baseRate = parseFloat(document.getElementById('currentRate').value) || 0;
+  const newRate  = baseRate + ov.raiseAmt;
+  document.getElementById('overrideNewRatePreview').textContent = baseRate > 0 ? `→ $${newRate.toFixed(2)}/hr` : '';
+  recalc();
+  saveFormState();
+}
+
+function rateToTier(rate) {
+  const r = parseFloat(rate);
+  if (isNaN(r) || r <= 0) return '';
+  const tiers = getActiveTiers();
+  const keys = ['T1','T2','T3','T4','T5','T6','T7'];
+  for (const k of keys) {
+    if (r >= tiers[k].floor && r <= tiers[k].ceiling) return k;
+  }
+  if (r > tiers.T7.ceiling) return 'T7';
+  // Between tiers — assign to lower tier
+  for (let i = keys.length - 2; i >= 0; i--) {
+    if (r > tiers[keys[i]].ceiling) return keys[i];
+  }
+  return '';
+}
+
+function onRateChange() {
+  const rate = document.getElementById('currentRate').value;
+  const tier = rateToTier(rate);
+  const sel = document.getElementById('currentTier');
+  const lbl = document.getElementById('tierAutoLabel');
+  if (tier) {
+    sel.value = tier;
+    lbl.textContent = '(auto-detected)';
+  } else {
+    lbl.textContent = '';
+  }
+  onTierChange(true);
+}
+
+function onTierChange(fromRate = false) {
+  if (!fromRate) document.getElementById('tierAutoLabel').textContent = '';
+  recalc();
+}
+
+function onOfficeChange() {
+  onRateChange();
+  saveFormState();
+}
+
+// ─── SUBMIT ──────────────────────────────────────────────────────────────────
+
+async function downloadPreviewPDF() {
+  const btn = document.getElementById('previewPdfBtn');
+  btn.disabled = true; btn.textContent = 'Generating…';
+  try {
+    if (!window.jspdf) { showToast('jsPDF library not loaded — check internet connection.', 'error'); return; }
+    if (typeof html2canvas === 'undefined') { showToast('html2canvas not loaded — check internet connection.', 'error'); return; }
+    const summary = buildSummary();
+    const b64 = await generatePDF(summary);
+    if (!b64 || b64.length < 100) { showToast('PDF came out empty — check console for errors.', 'error'); return; }
+    // Decode base64 and trigger download
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const pcName = document.getElementById('pcName')?.value?.trim() || 'PC';
+    const date = document.getElementById('reviewDate')?.value || new Date().toISOString().slice(0,10);
+    a.href = url; a.download = `PC_Review_${pcName.replace(/\s+/g,'_')}_${date}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('PDF downloaded — review it, then click Submit.', 'success');
+  } catch(e) {
+    console.error('PDF preview error:', e);
+    showToast('PDF generation failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '\uD83D\uDCC4 Download PDF Preview';
+  }
+}
+
+async function handleSubmit() {
+  const pcName = document.getElementById('pcName').value.trim();
+  const office = document.getElementById('homeOffice').value;
+  const tier   = document.getElementById('currentTier').value;
+  const omSig  = document.getElementById('omSignature').value.trim();
+  if (!pcName || !office || !tier || !omSig) {
+    showToast('Fill in PC Name, Office, Tier, and OM Signature before submitting.', 'error'); return;
+  }
+  const cfg = getConfig();
+  if (!cfg.workerUrl) {
+    showToast('Worker URL not configured. Contact IT.', 'error'); return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+
+  const summary = buildSummary();
+  let emailOk = false, clickupOk = false;
+
+  try {
+    // Generate PDF (fall back to HTML snapshot if html2pdf unavailable)
+    btn.textContent = 'Generating PDF…';
+    let formPdfB64 = null, formHtmlB64 = null, ext = 'html';
+    try {
+      formPdfB64 = await generatePDF(summary);
+      ext = 'pdf';
+    } catch(e) {
+      console.warn('PDF generation failed, using HTML snapshot:', e);
+      formHtmlB64 = buildFormSnapshot(summary);
+    }
+
+    const reviewDate = document.getElementById('reviewDate')?.value || new Date().toISOString().slice(0,10);
+    const taskName = `PC Raise Review — ${pcName} — ${office} — ${reviewDate}`;
+    const taskBody = JSON.stringify({
+      name: taskName,
+      description: summary.text,
+      priority: 2,
+      custom_fields: buildCustomFields(),
+    });
+
+    // Capture full form state for re-edit support
+    const formState = { _scores: {...scores}, _skillState: {...skillState}, _dynamicSkills: {} };
+    document.querySelectorAll('.main [id], .submit-section [id]').forEach(el => {
+      if ((el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') && el.id && el.id !== 'pinInput') formState[el.id] = el.value;
+    });
+    document.querySelectorAll('[data-editable][id]').forEach(el => { formState[el.id] = el.textContent; });
+    ['T1','T2','T3','T4','T5','T6','T7'].forEach(k => {
+      const body = document.getElementById(`tierBody_${k}`);
+      if (!body) return;
+      const base = TIER_SKILLS[k].length;
+      const rows = body.querySelectorAll('.skill-row');
+      if (rows.length > base) {
+        formState._dynamicSkills[k] = [];
+        for (let i = base; i < rows.length; i++) formState._dynamicSkills[k].push(rows[i].querySelector('.skill-name')?.textContent || '');
+      }
+    });
+    if (typeof getOverrideData === 'function') formState._override = getOverrideData();
+
+    btn.textContent = 'Submitting…';
+    const jwt = getAuthJwt();
+    const submitHeaders = { 'Content-Type': 'application/json' };
+    if (jwt) submitHeaders['Authorization'] = 'Bearer ' + jwt;
+    const res = await fetch(cfg.workerUrl, {
+      method: 'POST',
+      headers: submitHeaders,
+      body: JSON.stringify({
+        task_name: taskName,
+        task_body: taskBody,
+        da_name: pcName, office, tier,
+        review_date: reviewDate,
+        score:    document.getElementById('totalScore')?.textContent   || '—',
+        raise:    document.getElementById('raisePreview')?.textContent || '—',
+        new_rate: document.getElementById('newRatePreview')?.textContent || '—',
+        band:     document.getElementById('bandName')?.textContent     || '—',
+        reviewer: document.getElementById('reviewerName')?.value       || '—',
+        summary: summary.text,
+        form_pdf_b64:  formPdfB64,
+        form_html_b64: formHtmlB64,
+        form_filename: `PC_Review_${pcName.replace(/\s+/g,'_')}_${reviewDate}.${ext}`,
+        draft_id: getDraftId() || undefined,
+        form_state: formState,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      clickupOk = !!data.clickup_ok;
+      emailOk   = !!data.email_ok;
+      if (data.errors?.length) console.warn('Worker errors:', data.errors);
+      // Clear draft tracking after successful submit
+      clearDraftId();
+      showDraftNote('');
+    } else {
+      const errText = await res.text().catch(() => res.status);
+      console.error('Worker responded', res.status, errText);
+    }
+  } catch(e) {
+    console.error('Submit error:', e);
+  }
+
+  btn.disabled = false; btn.textContent = 'Submit for Approval';
+  const parts = [];
+  if (clickupOk) parts.push('ClickUp task created ✓');
+  else parts.push('ClickUp: failed — check console');
+  if (emailOk) parts.push('Email sent ✓');
+  else parts.push('Email pending (Resend key needed)');
+  showToast(parts.join('  ·  '), clickupOk ? 'success' : 'error');
+}
+
+function buildSummary() {
+  const f = id => document.getElementById(id)?.value || '—';
+  const t = id => document.getElementById(id)?.textContent || '—';
+  const pcName = f('pcName'), office = f('homeOffice'), tier = f('currentTier');
+  const rate = f('currentRate'), period = f('reviewPeriod'), reviewDate = f('reviewDate');
+  const reviewer = f('reviewerName'), omSig = f('omSignature'), empSig = f('employeeSig');
+  const p1 = t('p1Total'), p1Max = t('p1Max'), p2 = t('p2Total');
+  const total = t('totalScore'), totalMax = t('totalMax'), band = t('bandName');
+  const raise = t('raisePreview'), newRate = t('newRatePreview');
+  const gateA = document.getElementById('gateAStatus')?.textContent || '—';
+  const gateB = document.getElementById('gateBStatus')?.textContent || '—';
+  const kpiNotes = f('kpiNotes');
+  const notesA = f('notesA'), notesB = f('notesB'), notesC = f('notesC');
+  const ov = typeof getOverrideData === 'function' ? getOverrideData() : { active: false };
+
+  const goalsText = (ov.goalsActive && ov.goals?.length)
+    ? ov.goals.map((g, i) => `  Goal ${i+1}: ${g.desc || '—'} | Target: ${g.date || 'TBD'} | Raise: +$${g.amt.toFixed(2)}/hr`).join('\n')
+    : '';
+
+  const text = [
+    'PC ANNUAL REVIEW — COMPENSATION SUMMARY',
+    '═══════════════════════════════════════════',
+    `PC: ${pcName}  |  Office: ${office}  |  Tier: ${tier}  |  Rate: $${rate}/hr`,
+    `Review Period: ${period}  |  Date: ${reviewDate}  |  Reviewer: ${reviewer}`,
+    '',
+    'SCORES',
+    `  Part I  — KPI Performance:       ${p1} / ${p1Max}`,
+    `  Part II — In-Office Performance:  ${p2} / 75`,
+    `  TOTAL:                            ${total} / ${totalMax}  —  ${band}`,
+    '',
+    'GATES',
+    `  Gate A (Current Tier Mastery): ${gateA}`,
+    `  Gate B (Next Tier Mastery):    ${gateB}`,
+    '',
+    'COMPENSATION DECISION',
+    `  Raise:    ${raise}`,
+    `  ${newRate}`,
+    ...(ov.active ? [
+      '',
+      '⚠ MANAGER OVERRIDE ACTIVE',
+      `  Override Raise: +$${ov.raiseAmt.toFixed(2)}/hr`,
+      ov.comment ? `  Justification: ${ov.comment}` : '',
+      ...(ov.goalsActive && goalsText ? ['  Performance Goals:', goalsText] : []),
+    ] : []),
+    '',
+    'NOTES',
+    `  KPI Notes: ${kpiNotes}`,
+    `  Subsection A Notes: ${notesA}`,
+    `  Subsection B Notes: ${notesB}`,
+    `  Subsection C Notes: ${notesC}`,
+    '',
+    `Employee Signature: ${empSig}  |  OM Signature: ${omSig}`,
+    `Submitted: ${new Date().toLocaleDateString()}`,
+  ].join('\n');
+
+  const html = `
+<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#2A2E31;">
+  <div style="background:#2A2E31;padding:20px 24px;">
+    <div style="color:#F2EFE8;font-family:Georgia,serif;font-size:20px;font-weight:300;">PC Annual Review — Compensation Summary</div>
+  </div>
+  <div style="padding:24px;background:#F2EFE8;">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px;">
+      <tr><td style="padding:7px 10px;font-weight:600;color:#877765;width:130px;">PC</td><td style="padding:7px 10px;">${pcName}</td></tr>
+      <tr style="background:#fff"><td style="padding:7px 10px;font-weight:600;color:#877765;">Office</td><td style="padding:7px 10px;">${office}</td></tr>
+      <tr><td style="padding:7px 10px;font-weight:600;color:#877765;">Tier</td><td style="padding:7px 10px;">${tier} · $${rate}/hr</td></tr>
+      <tr style="background:#fff"><td style="padding:7px 10px;font-weight:600;color:#877765;">Review Period</td><td style="padding:7px 10px;">${period}</td></tr>
+      <tr><td style="padding:7px 10px;font-weight:600;color:#877765;">Reviewer</td><td style="padding:7px 10px;">${reviewer}</td></tr>
+    </table>
+    <div style="background:#877765;color:#fff;padding:16px 20px;border-radius:5px;margin-bottom:10px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;opacity:0.75;margin-bottom:4px;">Total Score</div>
+      <div style="font-size:32px;font-family:Georgia,serif;">${total} / ${totalMax}</div>
+      <div style="font-size:14px;margin-top:4px;opacity:0.9;">${band}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:13px;">
+      <tr><td style="padding:7px 10px;">Part I — KPI Performance</td><td style="padding:7px 10px;text-align:right;font-weight:600;">${p1} / ${p1Max}</td></tr>
+      <tr style="background:#fff"><td style="padding:7px 10px;">Part II — In-Office Performance</td><td style="padding:7px 10px;text-align:right;font-weight:600;">${p2} / 75</td></tr>
+      <tr><td style="padding:7px 10px;">Gate A — Current Tier Mastery</td><td style="padding:7px 10px;text-align:right;font-weight:600;">${gateA}</td></tr>
+      <tr style="background:#fff"><td style="padding:7px 10px;">Gate B — Next Tier Mastery</td><td style="padding:7px 10px;text-align:right;font-weight:600;">${gateB}</td></tr>
+    </table>
+    <div style="background:#2A2E31;color:#fff;padding:18px 20px;border-radius:5px;margin-bottom:${ov.active ? '10px' : '20px'};text-align:center;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;opacity:0.6;margin-bottom:6px;">Recommended Raise</div>
+      <div style="font-size:34px;font-family:Georgia,serif;">${raise}</div>
+      <div style="font-size:13px;opacity:0.7;margin-top:4px;">${newRate}</div>
+    </div>
+    ${ov.active ? `
+    <div style="background:#fff3cd;border:1.5px solid #e87770;border-radius:5px;padding:14px 18px;margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c0392b;margin-bottom:6px;">⚠ Manager Override — Raise Granted Outside Formula</div>
+      <div style="font-size:13px;margin-bottom:4px;"><strong>Override Raise:</strong> +$${ov.raiseAmt.toFixed(2)}/hr</div>
+      ${ov.comment ? `<div style="font-size:13px;margin-bottom:4px;"><strong>Justification:</strong> ${ov.comment}</div>` : ''}
+      ${ov.goalsActive && ov.goals?.length ? `
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:#877765;margin:8px 0 4px;">Performance Goals</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <tr style="background:#e8e0d4;"><td style="padding:5px 8px;font-weight:600;">Goal</td><td style="padding:5px 8px;font-weight:600;">Target Date</td><td style="padding:5px 8px;font-weight:600;">Raise</td></tr>
+          ${ov.goals.map((g,i) => `<tr style="${i%2===1?'background:#fff':''}"><td style="padding:5px 8px;">${g.desc||'—'}</td><td style="padding:5px 8px;">${g.date||'TBD'}</td><td style="padding:5px 8px;">+$${g.amt.toFixed(2)}/hr</td></tr>`).join('')}
+        <\/table>` : ''}
+    <\/div>` : ''}
+    <div style="font-size:12px;color:#877765;border-top:1px solid #D6CDBD;padding-top:12px;margin-top:8px;">
+      Employee: ${empSig} &nbsp;·&nbsp; OM: ${omSig} &nbsp;·&nbsp; Submitted: ${new Date().toLocaleDateString()}
+    </div>
+  </div>
+</div>`;
+
+  return { text, html };
+}
+
+function buildFormSnapshotDoc(summary) {
+  const f = id => document.getElementById(id)?.value || '—';
+  const t = id => document.getElementById(id)?.textContent || '—';
+
+  // KPI detail rows
+  const kpiRows = KPIS.map(k => {
+    const sc = scores[k.id];
+    const display = sc === 'na' ? 'N/A' : (sc || '—');
+    return `<tr><td style="padding:5px 10px;">${document.getElementById('kpiName_'+k.id)?.textContent || k.name}</td><td style="padding:5px 10px;text-align:center;">${display}</td></tr>`;
+  }).join('');
+
+  // Performance detail rows
+  const perfRows = PERF_SECTIONS.map(sec => {
+    const itemRows = sec.items.map(item => {
+      const sc = scores[item.id];
+      return `<tr><td style="padding:4px 10px 4px 20px;font-size:12px;">${item.name}</td><td style="padding:4px 10px;text-align:center;font-size:12px;">${sc || '—'}</td></tr>`;
+    }).join('');
+    return `<tr style="background:#f5f3ef"><td colspan="2" style="padding:6px 10px;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">${sec.title}</td></tr>${itemRows}`;
+  }).join('');
+
+  // Tier skill rows
+  const tierRows = Object.keys(TIER_SKILLS).map(tk => {
+    const skills = TIER_SKILLS[tk];
+    const header = `<tr style="background:#2A2E31;color:#fff"><td colspan="2" style="padding:6px 10px;font-size:12px;font-weight:700;">Tier ${tk.replace('T','')} — ${TIERS_STANDARD[tk].label}</td></tr>`;
+    const rows = skills.map((skill, idx) => {
+      const state = skillState[`${tk}_${idx}`];
+      const display = state === 'can' ? '✓ Can Do' : (state === 'cannot' ? '✗ Not Yet' : '—');
+      const color = state === 'can' ? '#2d6a3f' : (state === 'cannot' ? '#c0392b' : '#888');
+      return `<tr><td style="padding:4px 10px 4px 20px;font-size:12px;">${skill}</td><td style="padding:4px 10px;text-align:center;font-size:12px;color:${color};font-weight:600;">${display}</td></tr>`;
+    }).join('');
+    return header + rows;
+  }).join('');
+
+  const doc = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>PC Annual Review — ${f('pcName')} — ${f('reviewDate')}</title>
+<style>body{font-family:Arial,sans-serif;color:#2A2E31;max-width:760px;margin:0 auto;padding:20px}table{width:100%;border-collapse:collapse}td{vertical-align:top}h2{font-family:Georgia,serif;font-weight:300;margin:24px 0 8px}.section-hdr{background:#877765;color:#fff;padding:10px 14px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-top:24px}@media print{.no-print{display:none}}</style>
+</head><body>
+<div style="background:#2A2E31;color:#F2EFE8;padding:16px 20px;margin-bottom:24px">
+  <div style="font-family:Georgia,serif;font-size:18px;font-weight:300;">Smile Haus — PC Annual Review &amp; Compensation Form</div>
+  <div style="font-size:12px;opacity:0.6;margin-top:4px;">Submitted ${new Date().toLocaleString()}</div>
+</div>
+
+<div class="section-hdr">Employee Info</div>
+<table><tr><td style="padding:6px 10px;width:160px;font-weight:600;color:#877765;">PC Name</td><td style="padding:6px 10px;">${f('pcName')}</td><td style="padding:6px 10px;width:160px;font-weight:600;color:#877765;">Home Office</td><td style="padding:6px 10px;">${f('homeOffice')}</td></tr>
+<tr style="background:#f5f3ef"><td style="padding:6px 10px;font-weight:600;color:#877765;">Current Tier</td><td style="padding:6px 10px;">${f('currentTier')}</td><td style="padding:6px 10px;font-weight:600;color:#877765;">Current Rate</td><td style="padding:6px 10px;">$${f('currentRate')}/hr</td></tr>
+<tr><td style="padding:6px 10px;font-weight:600;color:#877765;">Review Period</td><td style="padding:6px 10px;">${f('reviewPeriod')}</td><td style="padding:6px 10px;font-weight:600;color:#877765;">Review Date</td><td style="padding:6px 10px;">${f('reviewDate')}</td></tr>
+<tr style="background:#f5f3ef"><td style="padding:6px 10px;font-weight:600;color:#877765;">Reviewer</td><td colspan="3" style="padding:6px 10px;">${f('reviewerName')}</td></tr></table>
+
+<div class="section-hdr">Part I — KPI Performance (${t('p1Total')} / ${t('p1Max')})</div>
+<table><tr style="background:#2A2E31;color:#fff"><td style="padding:6px 10px;font-size:12px;font-weight:700;">KPI</td><td style="padding:6px 10px;font-size:12px;font-weight:700;text-align:center;width:80px;">Score</td></tr>${kpiRows}</table>
+${f('kpiNotes') !== '—' ? `<div style="margin:8px 0;padding:8px 10px;background:#f5f3ef;font-size:12px;"><b>Notes:</b> ${f('kpiNotes')}</div>` : ''}
+
+<div class="section-hdr">Part II — In-Office Performance (${t('p2Total')} / 75)</div>
+<table><tr style="background:#2A2E31;color:#fff"><td style="padding:6px 10px;font-size:12px;font-weight:700;">Item</td><td style="padding:6px 10px;font-size:12px;font-weight:700;text-align:center;width:80px;">Score</td></tr>${perfRows}</table>
+
+<div class="section-hdr">Tier Competency Checklist</div>
+<table>${tierRows}</table>
+
+<div class="section-hdr">Results &amp; Compensation</div>
+<table>
+<tr><td style="padding:6px 10px;font-weight:600;color:#877765;">Total Score</td><td style="padding:6px 10px;">${t('totalScore')} / ${t('totalMax')} — ${t('bandName')}</td></tr>
+<tr style="background:#f5f3ef"><td style="padding:6px 10px;font-weight:600;color:#877765;">Gate A</td><td style="padding:6px 10px;">${t('gateAStatus')}</td></tr>
+<tr><td style="padding:6px 10px;font-weight:600;color:#877765;">Gate B</td><td style="padding:6px 10px;">${t('gateBStatus')}</td></tr>
+<tr style="background:#f5f3ef"><td style="padding:6px 10px;font-weight:600;color:#877765;">Raise</td><td style="padding:6px 10px;">${t('raisePreview')}</td></tr>
+<tr><td style="padding:6px 10px;font-weight:600;color:#877765;">New Rate</td><td style="padding:6px 10px;">${t('newRatePreview')}</td></tr>
+</table>
+
+<div style="margin-top:24px;padding:12px 14px;border-top:2px solid #2A2E31;font-size:12px;color:#877765;">
+  OM Signature: <b>${f('omSignature')}</b> &nbsp;·&nbsp; Employee Signature: <b>${f('employeeSig')}</b>
+</div>
+</body></html>`;
+
+  return doc;
+}
+
+function buildFormSnapshot(summary) {
+  const doc = buildFormSnapshotDoc(summary);
+  try {
+    return btoa(unescape(encodeURIComponent(doc)));
+  } catch(e) {
+    return btoa(doc);
+  }
+}
+
+async function generatePDF(summary) {
+  if (!window.jspdf) throw new Error('jsPDF not loaded');
+  if (typeof html2canvas === 'undefined') throw new Error('html2canvas not loaded');
+
+  const { jsPDF } = window.jspdf;
+  const mainEl = document.querySelector('.main');
+
+  // ── 1. Scroll to top so html2canvas captures from y=0 ────────────────────
+  const savedScrollY = window.scrollY;
+  window.scrollTo({ top: 0, behavior: 'instant' });
+  // Wait two animation frames for the browser to repaint
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  // ── 2. Capture using onclone to modify snapshot, never the live DOM ───────
+  let canvas;
+  try {
+    canvas = await html2canvas(mainEl, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#F2EFE8',
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight,
+      logging: false,
+      onclone: (doc) => {
+        // Expand all tier/level accordion bodies
+        doc.querySelectorAll('.tier-body').forEach(b => b.classList.add('open'));
+        // Un-sticky score bar (no fixed/sticky offset in snapshot)
+        const bar = doc.querySelector('.score-summary');
+        if (bar) bar.style.position = 'relative';
+        // Hide any open modals / overlays
+        doc.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+        // Strip edit-mode outlines
+        doc.body.classList.remove('edit-mode');
+        // Force-show Manager Override body if active in live DOM
+        const overrideCheck = document.getElementById('overrideCheck');
+        if (overrideCheck && overrideCheck.checked) {
+          const ob = doc.getElementById('overrideBody');
+          if (ob) { ob.style.display = 'block'; ob.classList.add('open'); }
+        }
+        // Force-show Goal Dates body if active in live DOM
+        const goalDatesCheck = document.getElementById('goalDatesCheck');
+        if (goalDatesCheck && goalDatesCheck.checked) {
+          const gb = doc.getElementById('goalDatesBody');
+          if (gb) { gb.style.display = 'block'; gb.classList.add('open'); }
+        }
+        // Force-show Salary Conversion card if active in live DOM
+        const salaryCheck = document.getElementById('convertToSalaryCheck');
+        if (salaryCheck && salaryCheck.checked) {
+          const sc = doc.getElementById('salaryCard');
+          if (sc) sc.style.display = 'block';
+        }
+        // Replace every textarea with a plain div — html2canvas clips textarea
+        // content. Read value from live DOM (cloned inputs have empty .value).
+        doc.querySelectorAll('textarea').forEach(ta => {
+          const liveTA = ta.id ? document.getElementById(ta.id) : null;
+          const value  = liveTA ? liveTA.value : ta.value;
+          const cs     = window.getComputedStyle(liveTA || ta);
+          const div    = doc.createElement('div');
+          ['font-family','font-size','font-weight','line-height','color',
+           'padding','border','border-radius','background-color',
+           'width','box-sizing','word-break','word-wrap']
+            .forEach(p => { div.style[p] = cs.getPropertyValue(p); });
+          div.style.whiteSpace = 'pre-wrap';
+          div.style.wordBreak  = 'break-word';
+          div.style.overflow   = 'visible';
+          div.style.height     = 'auto';
+          div.style.minHeight  = '0';
+          div.textContent      = value;
+          ta.parentNode.replaceChild(div, ta);
+        });
+        // Replace text/number/date inputs with divs — same clipping issue
+        doc.querySelectorAll('input[type=text], input[type=number], input[type=date]').forEach(inp => {
+          const liveInp = inp.id ? document.getElementById(inp.id) : null;
+          const value   = liveInp ? liveInp.value : inp.value;
+          if (!value) return;
+          const cs  = window.getComputedStyle(liveInp || inp);
+          const div = doc.createElement('div');
+          ['font-family','font-size','font-weight','line-height','color',
+           'padding','border','border-radius','background-color',
+           'width','box-sizing']
+            .forEach(p => { div.style[p] = cs.getPropertyValue(p); });
+          div.style.overflow   = 'visible';
+          div.style.height     = 'auto';
+          div.style.whiteSpace = 'nowrap';
+          div.textContent      = value;
+          inp.parentNode.replaceChild(div, inp);
+        });
+      },
+    });
+  } finally {
+    // ── 3. Restore scroll position ─────────────────────────────────────────
+    window.scrollTo({ top: savedScrollY, behavior: 'instant' });
+  }
+
+  // ── 4. Slice canvas into A4 pages ─────────────────────────────────────────
+  const imgData = canvas.toDataURL('image/jpeg', 0.93);
+  const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const pdfW = pdf.internal.pageSize.getWidth();   // 210 mm
+  const pdfH = pdf.internal.pageSize.getHeight();  // 297 mm
+
+  // Scale image to fill full page width
+  const imgW = pdfW;
+  const imgH = (canvas.height * imgW) / canvas.width;
+
+  let yPos = 0;
+  pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
+  while (yPos + pdfH < imgH) {
+    yPos += pdfH;
+    pdf.addPage();
+    pdf.addImage(imgData, 'JPEG', 0, -yPos, imgW, imgH);
+  }
+
+  return pdf.output('datauristring').split(',')[1];
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+
+const WORKER_URL  = 'https://sh-da-review-worker.smilehaus.workers.dev/submit';
+const WORKER_BASE = 'https://sh-da-review-worker.smilehaus.workers.dev';
+const DRAFT_ID_KEY = 'sh_pc_draft_id';
+
+// ─── AUTH + DRAFT HELPERS ────────────────────────────────────────────────────
+
+function getAuthJwt() {
+  // Check URL param first (coming from dashboard)
+  const params = new URLSearchParams(window.location.search);
+  const authParam = params.get('auth');
+  if (authParam) {
+    localStorage.setItem('sh_review_auth', authParam);
+    // Clean up URL without reload
+    try {
+      params.delete('auth');
+      const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash;
+      history.replaceState(null, '', newUrl);
+    } catch(e) {}
+  }
+  return localStorage.getItem('sh_review_auth') || null;
+}
+
+function getDraftId() { return localStorage.getItem(DRAFT_ID_KEY) || null; }
+function setDraftId(id) {
+  localStorage.setItem(DRAFT_ID_KEY, id);
+  try {
+    const params = new URLSearchParams(window.location.search);
+    params.set('draft', id);
+    history.replaceState(null, '', window.location.pathname + '?' + params.toString() + window.location.hash);
+  } catch(e) {}
+}
+function clearDraftId() { localStorage.removeItem(DRAFT_ID_KEY); }
+
+function showDraftNote(msg) {
+  const el = document.getElementById('draftSavedNote');
+  if (el) { el.textContent = msg; el.style.display = 'inline'; }
+}
+
+async function saveDraft() {
+  const jwt = getAuthJwt();
+  if (!jwt) { showToast('Sign in from the dashboard to save drafts.', 'error'); return; }
+
+  const pcName = document.getElementById('pcName')?.value?.trim() || '';
+  const office = document.getElementById('homeOffice')?.value || '';
+
+  const _draftBtns = ['saveDraftBtn','headerSaveDraftBtn'].map(id => document.getElementById(id)).filter(Boolean);
+  _draftBtns.forEach(b => { b.disabled = true; b.textContent = '💾 Saving…'; });
+  showDraftNote('');
+
+  // Collect full form state (same as saveFormState but synchronous)
+  const state = { _scores: {...scores}, _skillState: {...skillState}, _dynamicSkills: {} };
+  document.querySelectorAll('.main [id], .submit-section [id]').forEach(el => {
+    if ((el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') && el.id && el.id !== 'pinInput') {
+      state[el.id] = el.value;
+    }
+  });
+  document.querySelectorAll('[data-editable][id]').forEach(el => { state[el.id] = el.textContent; });
+  ['T1','T2','T3','T4','T5','T6','T7'].forEach(k => {
+    const body = document.getElementById(`tierBody_${k}`);
+    if (!body) return;
+    const base = TIER_SKILLS[k].length;
+    const rows = body.querySelectorAll('.skill-row');
+    if (rows.length > base) {
+      state._dynamicSkills[k] = [];
+      for (let i = base; i < rows.length; i++) state._dynamicSkills[k].push(rows[i].querySelector('.skill-name')?.textContent || '');
+    }
+  });
+  if (typeof getOverrideData === 'function') state._override = getOverrideData();
+
+  try {
+    const existingId = getDraftId();
+    const payload = {
+      form_type: 'pc',
+      employee_name: pcName || 'Unnamed',
+      office: office || 'Unknown',
+      state,
+    };
+    if (existingId) payload.id = existingId;
+
+    let res = await fetch(WORKER_BASE + '/draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+      body: JSON.stringify(payload),
+    });
+
+    // If draft ID was stale (deleted/expired), retry as a fresh save
+    if (res.status === 404 && payload.id) {
+      clearDraftId();
+      delete payload.id;
+      res = await fetch(WORKER_BASE + '/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    if (res.ok) {
+      const data = await res.json();
+      setDraftId(data.id);
+      _draftBtns.forEach(b => { b.disabled = false; b.textContent = '💾 Save Draft'; });
+      showDraftNote('Draft saved ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+      showToast('Draft saved!', 'success');
+    } else if (res.status === 401) {
+      _draftBtns.forEach(b => { b.disabled = false; b.textContent = '💾 Save Draft'; });
+      showToast('Session expired. Sign in again from the dashboard.', 'error');
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || res.status);
+    }
+  } catch(e) {
+    _draftBtns.forEach(b => { b.disabled = false; b.textContent = '💾 Save Draft'; });
+    showToast('Could not save draft: ' + e.message, 'error');
+  }
+}
+
+async function loadDraftFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const draftId = params.get('draft');
+  if (!draftId) return;
+
+  const jwt = getAuthJwt();
+  if (!jwt) return; // no auth, skip
+
+  try {
+    const res = await fetch(WORKER_BASE + '/draft/' + encodeURIComponent(draftId), {
+      headers: { 'Authorization': 'Bearer ' + jwt },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const draft = data.draft || data; // worker returns { ok, draft: {...} }
+    if (draft.state) {
+      setDraftId(draftId);
+      // Inline restoreFormState with the draft state instead of localStorage
+      const state = draft.state;
+      Object.keys(state).filter(k => !k.startsWith('_')).forEach(id => {
+        const el = document.getElementById(id);
+        if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA')) el.value = state[id];
+      });
+      document.querySelectorAll('[data-editable][id]').forEach(el => {
+        if (state[el.id] !== undefined) el.textContent = state[el.id];
+      });
+      if (state._scores) {
+        Object.assign(scores, state._scores);
+        Object.keys(state._scores).forEach(id => {
+          const val = state._scores[id];
+          document.querySelectorAll(`[data-id="${id}"][data-val]`).forEach(btn => btn.classList.toggle('active', String(btn.dataset.val) === String(val)));
+        });
+      }
+      if (state._skillState) {
+        Object.assign(skillState, state._skillState);
+        Object.keys(state._skillState).forEach(k => {
+          const parts = k.split('_'); const tierKey = parts[0], idx = parts[1];
+          const sv = state._skillState[k];
+          const canBtn = document.getElementById(`skill_${tierKey}_${idx}_can`);
+          const cannotBtn = document.getElementById(`skill_${tierKey}_${idx}_cannot`);
+          if (canBtn) canBtn.className = 'skill-btn' + (sv === 'can' ? ' can-do' : '');
+          if (cannotBtn) cannotBtn.className = 'skill-btn' + (sv === 'cannot' ? ' cannot-do' : '');
+        });
+      }
+      if (state._override && typeof getOverrideData === 'function') {
+        const ov = state._override;
+        const cb = document.getElementById('overrideCheck');
+        if (cb) {
+          cb.checked = ov.active;
+          document.getElementById('overrideBody')?.classList.toggle('open', ov.active);
+          const badge = document.getElementById('overrideBadge');
+          if (badge) { badge.textContent = ov.active ? 'Active' : 'Off'; badge.style.color = ov.active ? '#e87770' : ''; }
+          const box = document.getElementById('overrideBox');
+          if (box) box.style.borderColor = ov.active ? '#e87770' : '';
+        }
+        if (ov.comment) { const el = document.getElementById('overrideComment'); if (el) el.value = ov.comment; }
+        if (ov.raiseAmt) { const el = document.getElementById('overrideRaise'); if (el) el.value = ov.raiseAmt; }
+        if (ov.convertSalary) { const cc = document.getElementById('convertToSalaryCheck'); if (cc) { cc.checked = true; document.getElementById('salaryCard').style.display = ''; } }
+        if (ov.goalsActive && ov.goals?.length) {
+          const gc = document.getElementById('goalDatesCheck');
+          if (gc) { gc.checked = true; document.getElementById('goalDatesBody')?.classList.add('open'); ov.goals.forEach(g => addGoal(g.desc, g.date, g.amt || '')); }
+        }
+      }
+      if (document.getElementById('currentTier')?.value) onTierChange(true);
+      recalc();
+      showDraftNote('Draft loaded · ' + (draft.employee_name || ''));
+      showToast('Draft resumed — ' + (draft.employee_name || 'draft') + ' · ' + (draft.office || ''), 'success');
+    }
+  } catch(e) {
+    console.warn('Could not load draft:', e);
+  }
+}
+
+function getConfig() {
+  return {
+    workerUrl: localStorage.getItem('sh_worker_url') || WORKER_URL,
+  };
+}
+function openSettings() {
+  const c = getConfig();
+  document.getElementById('cfg_worker_url').value = c.workerUrl;
+  document.getElementById('settingsModal').classList.add('show');
+}
+function saveSettings() {
+  localStorage.setItem('sh_worker_url', document.getElementById('cfg_worker_url').value.trim() || WORKER_URL);
+  closeSettings(); showToast('Settings saved.', 'success');
+}
+function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
+
+async function testWorker() {
+  const baseUrl = document.getElementById('cfg_worker_url').value.trim() || WORKER_URL;
+  const healthUrl = baseUrl.replace(/\/submit$/, '/health');
+  const resultEl = document.getElementById('cuTestResult');
+  const btn = document.getElementById('cuTestBtn');
+  btn.disabled = true; btn.textContent = 'Testing…';
+  resultEl.textContent = '';
+  try {
+    const res = await fetch(healthUrl);
+    if (res.ok) {
+      resultEl.style.color = '#2d6a3f';
+      resultEl.textContent = '✓ Worker is online and reachable.';
+    } else {
+      resultEl.style.color = '#c0392b';
+      resultEl.textContent = `✗ Worker returned status ${res.status}.`;
+    }
+  } catch(e) {
+    resultEl.style.color = '#c0392b';
+    resultEl.textContent = '✗ Network error — worker unreachable.';
+  }
+  btn.disabled = false; btn.textContent = '🕗 Test Connection';
+}
+
+// ─── LOCK / EDIT ─────────────────────────────────────────────────────────────
+
+const FORM_PIN = 'smilehaus2024';
+let formLocked = false;
+
+function toggleLock() {
+  if (formLocked) {
+    unlockForm();
+    showToast('Form unlocked — all fields and score buttons are active.', 'success');
+  } else {
+    showToast('Form is in edit mode — all fields and score buttons are active.', 'success');
+  }
+}
+function getFormFields() {
+  return document.querySelectorAll(
+    '.main input, .main select, .main textarea, .submit-section input, button.score-btn, button.skill-btn, button.pass-all-btn, button.fail-all-btn, button.kpi-na-btn, button.tier-expand-btn, #submitBtn'
+  );
+}
+function getEditables() {
+  return document.querySelectorAll('[data-editable]');
+}
+function lockForm() {
+  formLocked = true;
+  getFormFields().forEach(el => el.disabled = true);
+  getEditables().forEach(el => { el.contentEditable = 'false'; });
+  document.body.classList.add('form-locked');
+  const btn = document.getElementById('editLockBtn');
+  if (btn) { btn.innerHTML = '\u270E Edit'; btn.classList.add('locked'); }
+  showToast('Form locked.', '');
+}
+function unlockForm() {
+  formLocked = false;
+  getFormFields().forEach(el => el.disabled = false);
+  getEditables().forEach(el => { el.contentEditable = 'true'; });
+  document.body.classList.remove('form-locked');
+  const btn = document.getElementById('editLockBtn');
+  if (btn) { btn.innerHTML = '&#9998; Edit'; btn.classList.remove('locked'); }
+  showToast('Form unlocked. You can now edit.', 'success');
+}
+let pinCallback = null;
+
+function openPinModal(onSuccess) {
+  pinCallback = onSuccess || null;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').style.display = 'none';
+  document.getElementById('pinModal').classList.add('show');
+  setTimeout(() => document.getElementById('pinInput').focus(), 80);
+}
+function closePinModal() {
+  document.getElementById('pinModal').classList.remove('show');
+  pinCallback = null;
+}
+function submitPin() {
+  const val = document.getElementById('pinInput').value;
+  if (val === FORM_PIN) {
+    closePinModal();
+    if (pinCallback) pinCallback();
+    else unlockForm();
+  } else {
+    document.getElementById('pinError').style.display = 'block';
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').focus();
+  }
+}
+function openSettingsGated() {
+  openPinModal(() => openSettings());
+}
+
+// ─── RESET ───────────────────────────────────────────────────────────────────
+
+function confirmReset() {
+  document.getElementById('resetModal').classList.add('show');
+}
+function closeResetModal() {
+  document.getElementById('resetModal').classList.remove('show');
+}
+function resetForm() {
+  closeResetModal();
+
+  // Clear persisted state
+  localStorage.removeItem(SAVE_KEY);
+
+  // Clear score & skill state objects
+  Object.keys(scores).forEach(k => delete scores[k]);
+  Object.keys(skillState).forEach(k => delete skillState[k]);
+
+  // Reset all standard inputs/selects/textareas in main + submit section
+  document.querySelectorAll('.main input, .main select, .main textarea, .submit-section input, .submit-section textarea').forEach(el => {
+    if (el.type === 'checkbox') { el.checked = false; }
+    else { el.value = ''; }
+  });
+
+  // Re-set today's date fields
+  const today = new Date().toISOString().slice(0, 10);
+  ['reviewDate', 'employeeDate', 'omDate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = today;
+  });
+
+  // Re-render all dynamic sections (restores default labels & clears active classes)
+  renderKPIs();
+  renderPerf();
+  renderTierAccordion();
+  restoreCustomSkills(); // re-apply template / auto-saved custom skills after re-render
+
+  // Ensure form is not in locked state
+  document.body.classList.remove('form-locked');
+
+  // Clear draft tracking so a new Save Draft creates a fresh draft, not an update
+  clearDraftId();
+  showDraftNote('');
+  // Remove ?draft= from URL if present
+  try {
+    const p = new URLSearchParams(window.location.search);
+    p.delete('draft');
+    history.replaceState(null, '', window.location.pathname + (p.toString() ? '?' + p.toString() : '') + window.location.hash);
+  } catch(e) {}
+
+  recalc();
+  showToast('Form has been reset.', 'success');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show ' + type;
+  setTimeout(() => { t.className = 'toast'; }, 5000);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+
+// ─── PERSISTENCE ─────────────────────────────────────────────────────────────
+
+const SAVE_KEY     = 'sh_pc_review_data';
+const TEMPLATE_KEY = 'sh_pc_review_template'; // persists forever — not cleared on reset
+const SKILLS_KEY   = 'sh_pc_review_skills';   // auto-saved custom skills — not cleared on reset
+
+// ─── TEMPLATE ────────────────────────────────────────────────────────────────
+
+function getCustomSkills() {
+  const cs = {};
+  ['T1','T2','T3','T4','T5','T6','T7'].forEach(k => {
+    const body = document.getElementById(`tierBody_${k}`);
+    if (!body) return;
+    const base = TIER_SKILLS[k].length;
+    const rows = body.querySelectorAll('.skill-row');
+    if (rows.length > base) {
+      cs[k] = [];
+      for (let i = base; i < rows.length; i++) {
+        cs[k].push(rows[i].querySelector('.skill-name')?.textContent || '');
+      }
+    }
+  });
+  return cs;
+}
+
+function autoSaveCustomSkills() {
+  localStorage.setItem(SKILLS_KEY, JSON.stringify(getCustomSkills()));
+}
+
+function restoreCustomSkills() {
+  // Template takes priority (has edited names too); fall back to auto-saved skills
+  let customSkills = null, skillNames = null, kpiNames = null, perfNames = null, perfDescs = null;
+  const tmplRaw = localStorage.getItem(TEMPLATE_KEY);
+  if (tmplRaw) {
+    try {
+      const t = JSON.parse(tmplRaw);
+      customSkills = t.customSkills || null;
+      skillNames   = t.skillNames   || null;
+      kpiNames     = t.kpiNames     || null;
+      perfNames    = t.perfNames    || null;
+      perfDescs    = t.perfDescs    || null;
+    } catch {}
+  }
+  if (!customSkills) {
+    const raw = localStorage.getItem(SKILLS_KEY);
+    try { if (raw) customSkills = JSON.parse(raw); } catch {}
+  }
+  // Re-add custom skill rows
+  if (customSkills) {
+    Object.keys(customSkills).forEach(tierKey => {
+      (customSkills[tierKey] || []).filter(Boolean).forEach(text => {
+        addSkill(tierKey);
+        const body = document.getElementById(`tierBody_${tierKey}`);
+        const rows = body.querySelectorAll('.skill-row');
+        const nameEl = rows[rows.length - 1].querySelector('.skill-name');
+        if (nameEl) { nameEl.textContent = text; nameEl.contentEditable = 'false'; }
+      });
+    });
+  }
+  // Restore edited base skill names
+  if (skillNames) {
+    Object.keys(skillNames).forEach(key => {
+      const el = document.getElementById(`skillName_${key}`);
+      if (el) el.textContent = skillNames[key];
+    });
+  }
+  // Restore edited KPI names and subtitles
+  if (kpiNames) {
+    Object.keys(kpiNames).forEach(id => {
+      if (id.endsWith('_sub')) {
+        const el = document.getElementById(`kpiSub_${id.replace('_sub','')}`);
+        if (el) el.textContent = kpiNames[id];
+      } else {
+        const el = document.getElementById(`kpiName_${id}`);
+        if (el) el.textContent = kpiNames[id];
+      }
+    });
+  }
+  // Restore edited performance criteria names and descriptions
+  if (perfNames) {
+    Object.keys(perfNames).forEach(id => {
+      const el = document.getElementById(`critName_${id}`);
+      if (el) el.textContent = perfNames[id];
+    });
+  }
+  if (perfDescs) {
+    Object.keys(perfDescs).forEach(id => {
+      const el = document.getElementById(`critDesc_${id}`);
+      if (el) el.textContent = perfDescs[id];
+    });
+  }
+}
+
+function saveTemplate(quiet = false) {
+  const template = { customSkills: getCustomSkills(), skillNames: {}, kpiNames: {}, perfNames: {}, perfDescs: {} };
+  // Capture any renamed base skill labels
+  ['T1','T2','T3','T4','T5','T6','T7'].forEach(k => {
+    const body = document.getElementById(`tierBody_${k}`);
+    if (!body) return;
+    const rows = body.querySelectorAll('.skill-row');
+    TIER_SKILLS[k].forEach((orig, i) => {
+      const current = rows[i]?.querySelector('.skill-name')?.textContent || '';
+      if (current && current !== orig) template.skillNames[`${k}_${i}`] = current;
+    });
+  });
+  // Capture any renamed KPI labels and subtitles
+  KPIS.forEach(kpi => {
+    const nameEl = document.getElementById(`kpiName_${kpi.id}`);
+    const subEl  = document.getElementById(`kpiSub_${kpi.id}`);
+    const name = nameEl?.textContent || '';
+    const sub  = subEl?.textContent  || '';
+    if (name && name !== kpi.name) template.kpiNames[kpi.id] = name;
+    if (sub  && sub  !== kpi.sub)  template.kpiNames[`${kpi.id}_sub`] = sub;
+  });
+  // Capture any renamed perf criteria names and descriptions
+  PERF_SECTIONS.forEach(sec => {
+    sec.items.forEach(item => {
+      const nameEl = document.getElementById(`critName_${item.id}`);
+      const descEl = document.getElementById(`critDesc_${item.id}`);
+      const name = nameEl?.textContent || '';
+      const desc = descEl?.textContent || '';
+      if (name && name !== item.name) template.perfNames[item.id] = name;
+      if (desc && desc !== item.desc) template.perfDescs[item.id] = desc;
+    });
+  });
+  localStorage.setItem(TEMPLATE_KEY, JSON.stringify(template));
+  localStorage.setItem(SKILLS_KEY, JSON.stringify(template.customSkills));
+  if (!quiet) showToast('Template saved — skills and labels will be preserved on every reset.', 'success');
+}
+
+let _editMode = false;
+
+function toggleEditLabels() {
+  if (document.body.classList.contains('form-locked')) {
+    showToast('Unlock the form first before editing labels.', 'error'); return;
+  }
+  _editMode = !_editMode;
+  const btn = document.getElementById('editLabelsBtn');
+  if (_editMode) {
+    document.querySelectorAll('[data-editable]').forEach(el => { el.contentEditable = 'true'; });
+    document.body.classList.add('edit-mode');
+    btn.innerHTML = '&#10003; Save Labels';
+    btn.classList.add('active');
+    showToast('Edit mode — click any KPI name, description, or skill label to rename it.', '');
+  } else {
+    document.querySelectorAll('[data-editable]').forEach(el => { el.contentEditable = 'false'; });
+    document.body.classList.remove('edit-mode');
+    btn.innerHTML = '&#9998; Edit Labels';
+    btn.classList.remove('active');
+    saveTemplate(true);
+    showToast('Labels saved. They will be preserved across resets.', 'success');
+  }
+}
+let _saveTimer = null;
+
+function saveFormState() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    const state = { _scores: {...scores}, _skillState: {...skillState}, _dynamicSkills: {} };
+    // Regular inputs/selects/textareas
+    document.querySelectorAll('.main [id], .submit-section [id]').forEach(el => {
+      if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+        if (el.id && el.id !== 'pinInput') state[el.id] = el.value;
+      }
+    });
+    // Contenteditable fields
+    document.querySelectorAll('[data-editable][id]').forEach(el => {
+      state[el.id] = el.textContent;
+    });
+    // Dynamic added skills (beyond base TIER_SKILLS count)
+    ['T1','T2','T3','T4','T5','T6','T7'].forEach(k => {
+      const body = document.getElementById(`tierBody_${k}`);
+      if (!body) return;
+      const base = TIER_SKILLS[k].length;
+      const rows = body.querySelectorAll('.skill-row');
+      if (rows.length > base) {
+        state._dynamicSkills[k] = [];
+        for (let i = base; i < rows.length; i++) {
+          state._dynamicSkills[k].push(rows[i].querySelector('.skill-name')?.textContent || '');
+        }
+      }
+    });
+    // Save override/goal/salary state
+    if (typeof getOverrideData === 'function') state._override = getOverrideData();
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  }, 300);
+}
+
+function restoreFormState() {
+  const raw = localStorage.getItem(SAVE_KEY);
+  if (!raw) return;
+  let state;
+  try { state = JSON.parse(raw); } catch(e) { return; }
+
+  // Regular fields
+  Object.keys(state).filter(k => !k.startsWith('_')).forEach(id => {
+    const el = document.getElementById(id);
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA')) {
+      el.value = state[id];
+    }
+  });
+  // Contenteditable fields
+  document.querySelectorAll('[data-editable][id]').forEach(el => {
+    if (state[el.id] !== undefined) el.textContent = state[el.id];
+  });
+  // Scores
+  if (state._scores) {
+    Object.assign(scores, state._scores);
+    Object.keys(state._scores).forEach(id => {
+      const val = state._scores[id];
+      document.querySelectorAll(`[data-id="${id}"][data-val]`).forEach(btn => {
+        btn.classList.toggle('active', String(btn.dataset.val) === String(val));
+      });
+    });
+  }
+  // Skill states
+  if (state._skillState) {
+    Object.assign(skillState, state._skillState);
+    Object.keys(state._skillState).forEach(k => {
+      const parts = k.split('_'); // e.g. ["T1","0"]
+      const tierKey = parts[0], idx = parts[1];
+      const sv = state._skillState[k];
+      const canBtn    = document.getElementById(`skill_${tierKey}_${idx}_can`);
+      const cannotBtn = document.getElementById(`skill_${tierKey}_${idx}_cannot`);
+      if (canBtn)    canBtn.className = 'skill-btn' + (sv === 'can' ? ' can-do' : '');
+      if (cannotBtn) cannotBtn.className = 'skill-btn' + (sv === 'cannot' ? ' cannot-do' : '');
+    });
+  }
+  // Dynamic skills
+  if (state._dynamicSkills) {
+    Object.keys(state._dynamicSkills).forEach(tierKey => {
+      (state._dynamicSkills[tierKey] || []).forEach(text => {
+        addSkill(tierKey);
+        const body = document.getElementById(`tierBody_${tierKey}`);
+        const rows = body.querySelectorAll('.skill-row');
+        const nameEl = rows[rows.length - 1].querySelector('.skill-name');
+        if (nameEl) nameEl.textContent = text;
+      });
+    });
+  }
+  // Restore override/goal/salary state
+  if (state._override) {
+    const ov = state._override;
+    const cb = document.getElementById('overrideCheck');
+    if (cb) {
+      cb.checked = ov.active;
+      document.getElementById('overrideBody').classList.toggle('open', ov.active);
+      document.getElementById('overrideBadge').textContent = ov.active ? 'Active' : 'Off';
+      document.getElementById('overrideBadge').style.color = ov.active ? '#e87770' : '';
+      document.getElementById('overrideBox').style.borderColor = ov.active ? '#e87770' : '';
+    }
+    if (ov.comment)  { const el = document.getElementById('overrideComment'); if (el) el.value = ov.comment; }
+    if (ov.raiseAmt) { const el = document.getElementById('overrideRaise');   if (el) el.value = ov.raiseAmt; }
+    if (ov.convertSalary) {
+      const cc = document.getElementById('convertToSalaryCheck');
+      if (cc) { cc.checked = true; document.getElementById('salaryCard').style.display = ''; }
+    }
+    if (ov.goalsActive && ov.goals?.length) {
+      const gc = document.getElementById('goalDatesCheck');
+      if (gc) {
+        gc.checked = true;
+        document.getElementById('goalDatesBody').classList.add('open');
+        ov.goals.forEach(g => addGoal(g.desc, g.date, g.amt || ''));
+      }
+    }
+  }
+  // Trigger tier badge/gate update
+  if (document.getElementById('currentTier').value) onTierChange(true);
+  recalc();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+
+// Populate currentTier dropdown from PC TIERS_STANDARD
+(function initTierDropdown() {
+  const keys = ['T1','T2','T3','T4','T5','T6','T7'];
+  const labels = [
+    'Entry, Just Hired', 'Front Desk Foundations', 'Insurance &amp; Billing',
+    'Case Acceptance &amp; Finance', 'Lead Patient Coordinator', 'Senior Coordinator', 'Complex Case Mgmt',
+  ];
+  const sel = document.getElementById('currentTier');
+  sel.innerHTML = '<option value="">— Select tier —</option>' +
+    keys.map((k, i) => `<option value="${k}">${k} — ${TIERS_STANDARD[k].rate} — ${labels[i]}</option>`).join('');
+})();
+
+renderKPIs();
+renderPerf();
+renderTierAccordion();
+restoreCustomSkills(); // restore any saved label edits on every page load
+const today = new Date().toISOString().slice(0,10);
+document.getElementById('reviewDate').value = today;
+document.getElementById('submitDate').value = today;
+document.getElementById('employeeSigDate').value = today;
+// Initialize auth from URL param and check for draft to resume
+getAuthJwt(); // processes ?auth= param if present
+if (localStorage.getItem('sh_review_auth')) {
+  ['backToHomeBtn','backToRecordsBtn','headerSaveDraftBtn'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'inline-flex';
+  });
+}
+const _urlDraftId = new URLSearchParams(window.location.search).get('draft');
+if (_urlDraftId) {
+  // Resuming a specific draft — load it from the server
+  setDraftId(_urlDraftId);
+  loadDraftFromUrl().then(() => {});
+} else {
+  // Fresh open — always clear any stale draft ID so this fill creates a new draft
+  clearDraftId();
+  restoreFormState();
+}
+// Auto-save on any input change
+document.querySelector('.main').addEventListener('input', saveFormState);
+document.querySelector('.main').addEventListener('change', saveFormState);
+document.querySelector('.submit-section').addEventListener('input', saveFormState);
+// Auto-save label edits whenever a [data-editable] field loses focus
+document.addEventListener('focusout', function(e) {
+  if (e.target.hasAttribute('data-editable')) saveTemplate(true);
+});
+</script>
+</body>
+</html>
